@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>carbr — os dados do Cadastro Ambiental Rural, sem baixar a base inteira</title>
+<meta name="description" content="O carbr republica a camada pública de imóveis do CAR dos 27 estados e permite consultas pontuais sem baixar a base: página de consulta, pacotes R e Python e servidor para assistentes. Proposta para o Desafio 3 do InovaCAR." />
+<meta property="og:title" content="carbr — os dados do CAR, sem baixar a base inteira" />
+<meta property="og:description" content="Consulta por ponto, código ou município em segundos, sem carga sobre o Sicar. Em produção, código aberto." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://castlaboratory.github.io/carbr/" />
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<style>
+  :root {
+    --bg: #0b1020;
+    --bg-soft: #121a33;
+    --card: #16203f;
+    --border: #263457;
+    --fg: #e8edf7;
+    --muted: #9fb0d0;
+    --brand: #7c5cff;
+    --brand-2: #29c7ac;
+    --accent: #ffb14e;
+    --code-bg: #0d1428;
+    --shadow: 0 12px 40px rgba(0,0,0,.35);
+    --radius: 16px;
+    --maxw: 1080px;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --grid: #263457;
+    --axis: #34456f;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f8fe;
+      --bg-soft: #eef2fb;
+      --card: #ffffff;
+      --border: #dbe3f4;
+      --fg: #10192e;
+      --muted: #56648a;
+      --code-bg: #0d1428;
+      --shadow: 0 12px 36px rgba(30,45,90,.12);
+      --series-1: #2a78d6;
+      --series-2: #eb6834;
+      --grid: #e6ebf7;
+      --axis: #c3cde6;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--fg);
+    background:
+      radial-gradient(1100px 600px at 12% -8%, rgba(124,92,255,.20), transparent 60%),
+      radial-gradient(900px 500px at 96% 4%, rgba(41,199,172,.16), transparent 55%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--brand-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 22px; }
+
+  /* Nav */
+  header.nav {
+    position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 62px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: -.02em; font-size: 1.1rem; }
+  .brand .logo { display: block; width: 28px; height: 32px; }
+  .nav-links { display: flex; gap: 22px; align-items: center; }
+  .nav-links a { color: var(--muted); font-weight: 600; font-size: .95rem; }
+  .nav-links a:hover { color: var(--fg); text-decoration: none; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: .95rem;
+    border: 1px solid var(--border); color: var(--fg); background: var(--card);
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); box-shadow: var(--shadow); }
+  .btn.primary { background: linear-gradient(135deg, var(--brand), #5b73ff); color: #fff; border: none; }
+  @media (max-width: 720px) { .nav-links a.hide-sm { display: none; } }
+
+  /* Hero */
+  .hero { padding: 74px 0 40px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--brand-2); background: color-mix(in srgb, var(--brand-2) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-2) 30%, transparent);
+    padding: 6px 12px; border-radius: 999px;
+  }
+  h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); line-height: 1.05; letter-spacing: -.03em; margin: 18px 0 14px; }
+  h1 .grad { background: linear-gradient(120deg, var(--brand), var(--brand-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { font-size: 1.18rem; color: var(--muted); max-width: 46ch; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 26px; }
+  .badges img { height: 22px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+
+  .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; }
+  @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } }
+
+  /* Terminal card */
+  .term {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .term-bar { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+  .term-title { margin-left: 8px; color: #7f8bb0; font: 600 .82rem ui-monospace, monospace; }
+  pre { margin: 0; padding: 18px 18px 22px; overflow-x: auto; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .88rem; }
+  pre code { color: #d7e0f5; }
+  .c-prompt { color: #6ee7c8; } .c-flag { color: #ffb14e; } .c-cmd { color: #8ea2ff; } .c-cmt { color: #6b779b; } .c-ok { color: #59d99a; }
+  .c-str { color: #ffb14e; } .c-ty { color: #6ee7c8; } .c-kw { color: #c9a5ff; }
+
+  /* Sections */
+  section { padding: 56px 0; }
+  section.alt { background: var(--bg-soft); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  h2 { font-size: clamp(1.6rem, 3.4vw, 2.2rem); letter-spacing: -.02em; margin: 0 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 30px; max-width: 62ch; }
+
+  .grid { display: grid; gap: 18px; }
+  .grid.f3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.f2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 860px) { .grid.f3, .grid.f2 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 22px; transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: color-mix(in srgb, var(--brand) 40%, var(--border)); }
+  .card .ic { font-size: 1.5rem; }
+  .card h3 { margin: 12px 0 6px; font-size: 1.1rem; letter-spacing: -.01em; }
+  .card p { margin: 0; color: var(--muted); font-size: .96rem; }
+
+  /* Entity pills */
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .pill { font: 600 .82rem ui-monospace, monospace; padding: 6px 11px; border-radius: 999px; background: color-mix(in srgb, var(--brand) 12%, transparent); border: 1px solid color-mix(in srgb, var(--brand) 26%, transparent); color: var(--fg); }
+  .pill.alt2 { background: color-mix(in srgb, var(--brand-2) 12%, transparent); border-color: color-mix(in srgb, var(--brand-2) 26%, transparent); }
+  .pill-h { margin: 16px 0 2px; font-weight: 700; font-size: .9rem; color: var(--muted); }
+
+  /* Steps */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 860px) { .steps { grid-template-columns: 1fr 1fr; } }
+  .step { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .step .n { font: 800 .8rem ui-monospace, monospace; color: var(--brand-2); }
+  .step h4 { margin: 6px 0 4px; font-size: 1rem; }
+  .step p { margin: 0; color: var(--muted); font-size: .9rem; }
+
+  .panel { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px; }
+  .note { color: var(--muted); font-size: .9rem; margin-top: 10px; }
+
+  table.cmp { width: 100%; border-collapse: collapse; font-size: .94rem; }
+  table.cmp th, table.cmp td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.cmp th { color: var(--muted); font-weight: 700; }
+  .scroll { overflow-x: auto; }
+
+  footer { padding: 40px 0 60px; color: var(--muted); border-top: 1px solid var(--border); }
+  .foot-inner { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; }
+  .foot-links { display: flex; gap: 18px; flex-wrap: wrap; }
+
+  /* Chart */
+  .viz { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); }
+  .viz h3 { margin: 0 0 2px; font-size: 1.1rem; letter-spacing: -.01em; }
+  .viz .cap { margin: 0 0 12px; color: var(--muted); font-size: .92rem; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 6px; font-size: .88rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .key { display: inline-block; width: 18px; height: 10px; border-radius: 2px; }
+  .key.k1 { background: var(--series-1); }
+  .key.k1d { background: color-mix(in srgb, var(--series-1) 30%, transparent); }
+  .key.k2 { height: 0; border-top: 2px dashed var(--series-2); }
+  .plot { position: relative; }
+  .plot svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .plot text { font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .plot text.end { fill: var(--fg); font-weight: 700; }
+  .tip { position: absolute; pointer-events: none; min-width: 170px; padding: 10px 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); box-shadow: var(--shadow); font-size: .85rem; color: var(--muted); opacity: 0; transition: opacity .1s ease; }
+  .tip.on { opacity: 1; }
+  .tip .when { font-weight: 700; color: var(--fg); margin-bottom: 4px; }
+  .tip .row { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  .tip .row b { color: var(--fg); font-variant-numeric: tabular-nums; }
+  details.tbl { margin-top: 12px; color: var(--muted); font-size: .9rem; }
+  details.tbl summary { cursor: pointer; font-weight: 700; }
+  table.data { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 10px; }
+  table.data th, table.data td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  table.data th { color: var(--muted); font-weight: 700; }
+  table.data td { color: var(--fg); }
+  /* Diagramas em SVG: herdam as cores do tema */
+  .plot svg text { font-size: 14px; }
+  .plot svg .d-title { fill: var(--fg); font-weight: 700; font-size: 15px; }
+  .plot svg .d-lane { fill: var(--muted); font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+  .plot svg .d-box { fill: var(--bg-soft); stroke: var(--border); stroke-width: 1.5; }
+  .plot svg .d-box.good { stroke: var(--brand-2); fill: color-mix(in srgb, var(--brand-2) 10%, var(--card)); }
+  .plot svg .d-box.warn { stroke: var(--series-2); fill: color-mix(in srgb, var(--series-2) 10%, var(--card)); }
+  .plot svg .d-flow { stroke: var(--brand-2); stroke-width: 2.2; fill: none; }
+  .plot svg .d-flow.heavy { stroke: var(--series-2); stroke-width: 7; }
+  .plot svg .d-flow.dashed { stroke: var(--muted); stroke-dasharray: 6 5; }
+  .plot svg .d-arrow { fill: var(--muted); }
+  .plot svg .d-rule { stroke: var(--border); stroke-width: 1; }
+  .plot svg .d-warn { fill: var(--series-2); font-weight: 700; }
+  .plot svg .d-good { fill: var(--brand-2); font-weight: 700; }
+  .plot svg .d-chip rect { fill: var(--card); stroke: var(--border); }
+  .plot svg .d-chip text { font-size: 13px; fill: var(--fg); }
+  @media (max-width: 720px) { .plot { overflow-x: auto; } .plot svg { min-width: 760px; } #blocks svg, #stages svg { min-width: 0; } }
+
+  /* O briefing, item a item */
+  .item { display: grid; grid-template-columns: .8fr 1.2fr; gap: 26px; padding: 26px 0; border-top: 1px solid var(--border); }
+  .item:first-of-type { border-top: 0; padding-top: 6px; }
+  @media (max-width: 860px) { .item { grid-template-columns: 1fr; gap: 12px; } }
+  .item h3 { margin: 10px 0 6px; font-size: 1.15rem; letter-spacing: -.01em; }
+  .item .ask p { margin: 0; color: var(--muted); font-size: .95rem; }
+  .item .how > p { margin: 0 0 12px; }
+  .item .how .panel + .note, .item .how p + .panel { margin-top: 0; }
+  .tag { display: inline-block; font: 700 .76rem ui-monospace, monospace; padding: 4px 10px; border-radius: 999px; }
+  .tag.ok { color: var(--brand-2); background: color-mix(in srgb, var(--brand-2) 14%, transparent); border: 1px solid color-mix(in srgb, var(--brand-2) 30%, transparent); }
+  .tag.part { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent); }
+  .eyebrow { text-transform: none; letter-spacing: .02em; }
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-inner">
+    <div class="brand"><img class="logo" src="logo.svg" alt="Logo do carbr" width="28" height="32"> carbr</div>
+    <nav class="nav-links">
+      <a class="hide-sm" href="#problema">O problema</a>
+      <a class="hide-sm" href="#como">Como funciona</a>
+      <a class="hide-sm" href="#briefing">O briefing, item a item</a>
+      <a class="hide-sm" href="#numeros">Em números</a>
+      <a class="hide-sm" href="#criterios">Critérios</a>
+      <a class="hide-sm" href="#usar">Usar</a>
+      <a class="btn" href="https://car.castlab.org">Abrir a consulta ↗</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">◆ InovaCAR · Desafio 3 · acesso aos dados do CAR</span>
+        <h1>Os dados do CAR, <span class="grad">sem baixar a base inteira</span>.</h1>
+        <p class="lead">O carbr republica a camada pública de imóveis do Sicar, dos 27 estados, num formato em que cada consulta transfere só o trecho de que precisa. Já está em produção: página de consulta, pacotes em R e Python e um servidor para assistentes.</p>
+        <div class="badges">
+          <a href="https://pypi.org/project/carbr/"><img alt="PyPI" src="https://img.shields.io/pypi/v/carbr.svg"></a>
+          <a href="https://github.com/castlaboratory/carbr-r/actions/workflows/R-CMD-check.yaml"><img alt="R CMD check" src="https://github.com/castlaboratory/carbr-r/actions/workflows/R-CMD-check.yaml/badge.svg"></a>
+          <a href="https://doi.org/10.5281/zenodo.24537631"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.5281/zenodo.24537631.svg"></a>
+          <img alt="Licença MIT" src="https://img.shields.io/badge/licença-MIT-blue.svg">
+          <img alt="27 UFs" src="https://img.shields.io/badge/cobertura-27%20UFs-brightgreen.svg">
+        </div>
+        <div class="cta">
+          <a class="btn primary" href="https://car.castlab.org">Consultar no mapa →</a>
+          <a class="btn" href="#briefing">O briefing, item a item</a>
+          <a class="btn" href="https://github.com/castlaboratory/carbr">GitHub ★</a>
+        </div>
+      </div>
+      <div class="term" aria-hidden="true">
+        <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">R · que imóveis estão declarados aqui?</span></div>
+<pre><code><span class="c-kw">library</span>(carbr)
+
+<span class="c-cmt"># um ponto no Distrito Federal</span>
+<span class="c-cmd">car_at</span>(lon = <span class="c-flag">-47.9</span>, lat = <span class="c-flag">-15.8</span>)
+<span class="c-ok">#&gt; 2 imóveis · sobreposição</span>
+<span class="c-cmt">#&gt;  Brasília   94.379 ha  cancelado</span>
+<span class="c-cmt">#&gt;  Brasília  103.415 ha  cancelado</span>
+
+<span class="c-cmt"># o país inteiro, em segundos</span>
+<span class="c-cmd">car_summary</span>(<span class="c-str">"size_class"</span>)
+<span class="c-cmt">#&gt;  small   8.036.736</span>
+<span class="c-cmt">#&gt;  medium    398.351</span>
+<span class="c-cmt">#&gt;  large     142.974</span>
+<span class="c-ok">#&gt; 160 KB transferidos</span></code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="problema" class="alt">
+    <div class="wrap">
+      <h2>O problema que o desafio descreve</h2>
+      <p class="sub">O briefing do InovaCAR resume assim: para fazer uma consulta regional ou pontual, hoje é preciso baixar a base completa, o que gera tráfego excessivo e lentidão nos servidores do Sicar. E faltam interfaces simples para quem não é técnico.</p>
+      <div class="viz">
+        <h3>Uma pergunta sobre um imóvel, antes e depois</h3>
+        <p class="cap">Medido por nós, de um computador em Recife. O volume do download completo é estimado a partir de amostras; o tempo foi medido.</p>
+        <div class="plot">
+          <svg viewBox="0 0 1000 300" role="img" aria-label="Diagrama: hoje, a consulta baixa o estado inteiro do Sicar em 22 minutos; com o carbr, lê 3 megabytes em 2 segundos sem tocar o Sicar.">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-arrow"/></marker>
+            </defs>
+            <text x="0" y="22" class="d-lane">Hoje</text>
+            <rect x="0" y="36" width="170" height="70" rx="12" class="d-box"/>
+            <text x="85" y="66" text-anchor="middle" class="d-title">Quem consulta</text>
+            <text x="85" y="88" text-anchor="middle">quer 1 imóvel</text>
+            <line x1="176" y1="74" x2="552" y2="74" class="d-flow heavy"/><path d="M548,62 L564,74 L548,86 z" style="fill:var(--series-2)"/>
+            <text x="368" y="56" text-anchor="middle" class="d-warn">o estado inteiro: ~80 MB · 88 requisições · 22 min</text>
+            <rect x="566" y="36" width="200" height="70" rx="12" class="d-box warn"/>
+            <text x="666" y="66" text-anchor="middle" class="d-title">Servidores do Sicar</text>
+            <text x="666" y="88" text-anchor="middle">carga a cada consulta</text>
+
+            <line x1="0" y1="138" x2="1000" y2="138" class="d-rule"/>
+
+            <text x="0" y="170" class="d-lane">Com o carbr</text>
+            <rect x="0" y="184" width="170" height="70" rx="12" class="d-box"/>
+            <text x="85" y="214" text-anchor="middle" class="d-title">Quem consulta</text>
+            <text x="85" y="236" text-anchor="middle">quer 1 imóvel</text>
+            <line x1="176" y1="219" x2="430" y2="219" class="d-flow" marker-end="url(#arrow)"/>
+            <text x="303" y="206" text-anchor="middle" class="d-good">só o trecho: 3 MB · 2 s</text>
+            <rect x="436" y="184" width="220" height="70" rx="12" class="d-box good"/>
+            <text x="546" y="214" text-anchor="middle" class="d-title">car.castlab.org</text>
+            <text x="546" y="236" text-anchor="middle">arquivos estáticos</text>
+            <line x1="800" y1="219" x2="662" y2="219" class="d-flow dashed" marker-end="url(#arrow)"/>
+            <text x="731" y="206" text-anchor="middle">1 cópia por semana</text>
+            <rect x="806" y="184" width="194" height="70" rx="12" class="d-box"/>
+            <text x="903" y="214" text-anchor="middle" class="d-title">Sicar</text>
+            <text x="903" y="236" text-anchor="middle">sem carga de usuários</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="como">
+    <div class="wrap">
+      <h2>Como funciona</h2>
+      <p class="sub">Em vez de uma API com banco de dados por trás, publicamos arquivos. Eles são organizados de modo que o programa de quem consulta saiba, pelo índice, quais pedaços pedir. Não há servidor de aplicação para manter nem para cair.</p>
+      <div class="viz" style="margin-bottom:18px">
+        <h3>Do Sicar a quem usa</h3>
+        <p class="cap">Uma cópia semanal alimenta uma publicação única, lida por quatro caminhos diferentes.</p>
+        <div class="plot">
+          <svg viewBox="0 0 1000 380" role="img" aria-label="Arquitetura: o Sicar é copiado toda semana por um processo de carga, que publica arquivos GeoParquet com catálogo, resumos, histórico e indicadores de qualidade; a publicação é lida pela página de consulta, pelos pacotes R e Python, pelo servidor MCP e por qualquer ferramenta que leia Parquet.">
+            <rect x="0" y="150" width="150" height="80" rx="12" class="d-box"/>
+            <text x="75" y="184" text-anchor="middle" class="d-title">Sicar</text>
+            <text x="75" y="206" text-anchor="middle">serviço público (WFS)</text>
+            <line x1="156" y1="190" x2="214" y2="190" class="d-flow dashed" marker-end="url(#arrow)"/>
+            <rect x="220" y="150" width="170" height="80" rx="12" class="d-box"/>
+            <text x="305" y="180" text-anchor="middle" class="d-title">Carga semanal</text>
+            <text x="305" y="200" text-anchor="middle">ordena, indexa, confere</text>
+            <text x="305" y="218" text-anchor="middle">carbr-etl</text>
+            <line x1="396" y1="190" x2="454" y2="190" class="d-flow" marker-end="url(#arrow)"/>
+
+            <rect x="460" y="40" width="230" height="300" rx="14" class="d-box good"/>
+            <text x="575" y="70" text-anchor="middle" class="d-title">Publicação</text>
+            <text x="575" y="90" text-anchor="middle">car.castlab.org · 3,7 GB</text>
+            <g class="d-chip">
+              <rect x="482" y="108" width="186" height="34" rx="8"/><text x="575" y="130" text-anchor="middle">imóveis · GeoParquet por UF</text>
+              <rect x="482" y="150" width="186" height="34" rx="8"/><text x="575" y="172" text-anchor="middle">catálogo · SHA-256</text>
+              <rect x="482" y="192" width="186" height="34" rx="8"/><text x="575" y="214" text-anchor="middle">resumos pré-calculados</text>
+              <rect x="482" y="234" width="186" height="34" rx="8"/><text x="575" y="256" text-anchor="middle">indicadores de qualidade</text>
+              <rect x="482" y="276" width="186" height="34" rx="8"/><text x="575" y="298" text-anchor="middle">histórico semanal</text>
+            </g>
+
+            <line x1="696" y1="84" x2="774" y2="52" class="d-flow" marker-end="url(#arrow)"/>
+            <line x1="696" y1="150" x2="774" y2="140" class="d-flow" marker-end="url(#arrow)"/>
+            <line x1="696" y1="230" x2="774" y2="240" class="d-flow" marker-end="url(#arrow)"/>
+            <line x1="696" y1="296" x2="774" y2="328" class="d-flow" marker-end="url(#arrow)"/>
+
+            <rect x="780" y="10" width="220" height="74" rx="12" class="d-box"/>
+            <text x="890" y="40" text-anchor="middle" class="d-title">Página de consulta</text>
+            <text x="890" y="62" text-anchor="middle">mapa, ficha, ajuda</text>
+            <rect x="780" y="104" width="220" height="74" rx="12" class="d-box"/>
+            <text x="890" y="134" text-anchor="middle" class="d-title">Pacotes R e Python</text>
+            <text x="890" y="156" text-anchor="middle">análise e automação</text>
+            <rect x="780" y="198" width="220" height="74" rx="12" class="d-box"/>
+            <text x="890" y="228" text-anchor="middle" class="d-title">Servidor MCP</text>
+            <text x="890" y="250" text-anchor="middle">assistentes de IA</text>
+            <rect x="780" y="292" width="220" height="74" rx="12" class="d-box"/>
+            <text x="890" y="322" text-anchor="middle" class="d-title">Qualquer ferramenta</text>
+            <text x="890" y="344" text-anchor="middle">que leia Parquet</text>
+          </svg>
+        </div>
+      </div>
+      <div class="viz" style="margin-bottom:22px">
+        <h3>Por que uma consulta lê tão pouco</h3>
+        <p class="cap">O arquivo de Pernambuco tem 436 mil imóveis em 107 blocos, ordenados por município. Para os 10.918 imóveis de Petrolina, o programa lê o índice e pede só 4 blocos.</p>
+        <div class="plot" id="blocks"></div>
+        <div class="legend" style="margin-top:8px">
+          <span><i class="key" style="background:var(--brand-2)"></i>blocos lidos (4)</span>
+          <span><i class="key" style="background:var(--grid)"></i>blocos ignorados (103)</span>
+        </div>
+      </div>
+      <div class="steps">
+        <div class="step"><div class="n">01</div><h4>Copiar toda semana</h4><p>Um processo agendado lê o serviço público do Sicar, estado por estado, em requisições sequenciais e com pausa.</p></div>
+        <div class="step"><div class="n">02</div><h4>Ordenar e indexar</h4><p>Os imóveis são gravados por município e por proximidade no mapa, com o retângulo de cada um, em blocos pequenos.</p></div>
+        <div class="step"><div class="n">03</div><h4>Publicar arquivos</h4><p>Arquivos estáticos numa rede de distribuição, com catálogo, dicionário de dados e a assinatura de cada arquivo.</p></div>
+        <div class="step"><div class="n">04</div><h4>Ler só o trecho</h4><p>Quem consulta pede ao servidor apenas os bytes dos blocos que interessam. O resto do arquivo nunca trafega.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="briefing" class="alt">
+    <div class="wrap">
+      <h2>O que o briefing pede, item a item</h2>
+      <p class="sub">Cada linha é uma característica ou um resultado esperado do Desafio 3, com o que já entregamos e como fazer. Onde ainda não atendemos, está dito.</p>
+
+      <div class="item">
+        <div class="ask"><span class="tag ok">Atende</span><h3>Consultas pontuais, sem baixar a base</h3><p>O briefing pede "APIs para consultas pontuais e específicas", sem o download completo.</p></div>
+        <div class="how">
+          <p>Três consultas diretas: por ponto no mapa, por código do imóvel e por município. Na <a href="https://car.castlab.org">página</a>, é um clique. Nos pacotes:</p>
+          <div class="panel"><pre><code><span class="c-cmd">car_at</span>(lon = <span class="c-flag">-40.5</span>, lat = <span class="c-flag">-9.2</span>)                  <span class="c-cmt"># imóveis num ponto · 3 MB, 2 s</span>
+<span class="c-cmd">car_property</span>(<span class="c-str">"PE-2611101-588BC484…"</span>)          <span class="c-cmt"># um imóvel pelo código · 3 MB, 2 s</span>
+<span class="c-cmd">car_properties</span>(<span class="c-str">"PE"</span>, municipality = <span class="c-str">"Petrolina"</span>) <span class="c-cmt"># os 10.918 imóveis do município</span></code></pre></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="ask"><span class="tag ok">Atende</span><h3>Filtros antes do download</h3><p>"Filtros avançados para pesquisas customizadas pré-download."</p></div>
+        <div class="how">
+          <p>Os filtros são aplicados na leitura: só os blocos que podem atender ao filtro são transferidos. Há filtros por situação, porte, tipo, município e retângulo; para os demais, uma tabela preguiçosa aceita qualquer condição.</p>
+          <div class="panel"><pre><code><span class="c-cmd">car_properties</span>(<span class="c-str">"PE"</span>, status = <span class="c-str">"pending"</span>, size_class = <span class="c-str">"small"</span>, geometry = <span class="c-kw">FALSE</span>)
+
+<span class="c-cmd">car_tbl</span>(<span class="c-str">"PA"</span>) |&gt;                                   <span class="c-cmt"># qualquer filtro, com dplyr</span>
+  <span class="c-cmd">filter</span>(condition == <span class="c-str">"Analisado, aguardando atendimento a notificação"</span>, area_ha &gt; <span class="c-flag">100</span>) |&gt;
+  <span class="c-cmd">collect</span>()</code></pre></div>
+          <p class="note">O exemplo do briefing, "imóveis com área a recompor", depende de camadas que o serviço público não traz; ver os limites, ao fim desta seção.</p>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="ask"><span class="tag part">Parcial</span><h3>Classificação, qualificação e clusterização</h3><p>"Algoritmos de classificação, qualificação e clusterização automática de imóveis do CAR por padrões."</p></div>
+        <div class="how">
+          <p><b>Qualificação:</b> para cada imóvel não cancelado do país, calculamos a parcela da área sobreposta a outros cadastros e a parcela fora do município declarado. <b>Classificação:</b> a etapa da análise em seis categorias e uma triagem em lote. <b>Clusterização</b> por tipologia de municípios ainda não foi feita.</p>
+          <div class="panel"><pre><code><span class="c-cmd">car_quality</span>(<span class="c-str">"PE"</span>, municipality = <span class="c-str">"Petrolina"</span>)   <span class="c-cmt"># overlap_share, outside_share por imóvel</span>
+<span class="c-cmd">car_quality_summary</span>()                          <span class="c-cmt"># por município, o país inteiro</span>
+<span class="c-cmd">car_check</span>(codigos)                             <span class="c-cmt"># ok · attention · blocked · not_found</span></code></pre></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="ask"><span class="tag part">Parcial</span><h3>Linha do tempo dos gargalos</h3><p>"Dashboard gerencial em formato de linha do tempo para monitoramento de gargalos no ciclo de vida do registro."</p></div>
+        <div class="how">
+          <p>O Sicar não informa quando um cadastro muda de etapa. Por isso, a cada atualização guardamos o resumo da semana e o fluxo entre as duas cargas: quantos imóveis passaram de cada etapa para cada outra, por estado. A série começou em 25/11/2026; o painel sobre ela está em construção. O retrato atual, por etapa e por ano de criação, já existe.</p>
+          <div class="panel"><pre><code><span class="c-cmd">car_summary</span>(<span class="c-kw">c</span>(<span class="c-str">"state"</span>, <span class="c-str">"condition"</span>))            <span class="c-cmt"># onde a análise está parada, por UF</span>
+<span class="c-cmd">car_summary</span>(<span class="c-kw">c</span>(<span class="c-str">"created_year"</span>, <span class="c-str">"condition"</span>))     <span class="c-cmt"># por ano de criação do cadastro</span></code></pre></div>
+          <p class="note">Guia com os gráficos: <a href="https://castlaboratory.github.io/carbr-r/articles/analise.html">Onde a análise está parada</a>.</p>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="ask"><span class="tag ok">Atende</span><h3>Perguntas em linguagem natural</h3><p>"Chatbots com suporte ao processamento de linguagem natural."</p></div>
+        <div class="how">
+          <p>Um servidor do protocolo MCP expõe as consultas a qualquer assistente compatível. A pessoa pergunta "quantos imóveis notificados há em Marabá?" e o assistente responde com o dado real, a fonte e a data. Não mantemos um modelo de linguagem: o custo é de quem usa o assistente.</p>
+          <div class="panel"><pre><code><span class="c-prompt">$</span> <span class="c-cmd">claude</span> mcp add --transport http car https://mcp.castlab.org/mcp
+
+<span class="c-cmt"># "Quantos imóveis notificados e sem resposta há em Marabá?"</span>
+<span class="c-ok">→ 8.043 de 12.935 imóveis (62,2%) · Sicar/SFB, via carbr · dados de 25/11/2026</span></code></pre></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="ask"><span class="tag ok">Atende</span><h3>Hub de conhecimento</h3><p>"Central de conhecimento do Sicar" com guias rápidos, FAQ, biblioteca técnica e legislação.</p></div>
+        <div class="how">
+          <p>A <a href="https://car.castlab.org/ajuda.html">central de ajuda</a> explica em linguagem simples o que é o CAR, cada situação e cada etapa da análise, traz perguntas frequentes, o dicionário de dados e a legislação. Três guias mostram análises reproduzíveis: <a href="https://castlaboratory.github.io/carbr-r/articles/carbr.html">primeiros passos</a>, <a href="https://castlaboratory.github.io/carbr-r/articles/inconsistencias.html">inconsistências do cadastro</a> e <a href="https://castlaboratory.github.io/carbr-r/articles/analise.html">onde a análise está parada</a>. Ainda não há vídeos.</p>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="ask"><span class="tag ok">Atende</span><h3>Menos banda e menos carga no Sicar</h3><p>Resultado esperado: "redução significativa no consumo de largura de banda e carga computacional dos servidores do Sicar".</p></div>
+        <div class="how">
+          <p>Nenhuma consulta de usuário chega ao Sicar. Só a atualização semanal o acessa: cerca de 1.700 requisições sequenciais, em 4 horas. E cada consulta transfere uma fração do que o download completo exigiria; os números estão na seção seguinte.</p>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="ask"><span class="tag part">Parcial</span><h3>Agilidade na análise de crédito</h3><p>Resultado esperado: "agilidade no processamento de análises de crédito sustentável e conformidade socioambiental".</p></div>
+        <div class="how">
+          <p>Uma triagem em lote devolve, para uma lista de códigos, a situação, a etapa da análise e um resultado simples. Trezentos códigos são verificados em menos de 10 segundos. Ela diz só o que consta na camada pública: não cobre embargos nem sobreposição com terras indígenas ou unidades de conservação.</p>
+          <div class="panel"><pre><code><span class="c-cmd">car_check</span>(<span class="c-kw">c</span>(<span class="c-str">"PE-2611101-588BC484…"</span>, <span class="c-str">"PA-1500206-8CE6BFB2…"</span>))
+<span class="c-cmt">#&gt;  ok         Cadastro ativo, sem notificação pendente.</span>
+<span class="c-cmt">#&gt;  attention  Analisado, com notificação sem resposta do declarante.</span></code></pre></div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="ask"><span class="tag ok">Atende</span><h3>Código aberto, sem dependência de fornecedor</h3><p>"Soluções em código aberto", e a rejeição a propostas conceituais ou a redesign sem ganho no backend.</p></div>
+        <div class="how">
+          <p>Tudo é público, sob licença MIT, e arquivado com DOI: a <a href="https://github.com/castlaboratory/carbr-etl">carga</a>, os pacotes em <a href="https://github.com/castlaboratory/carbr-r">R</a> e <a href="https://github.com/castlaboratory/carbr-py">Python</a> e o <a href="https://github.com/castlaboratory/carbr-mcp">servidor MCP</a>. Os arquivos seguem um padrão aberto e mudam de provedor em horas. Não é uma proposta: está em produção, e o ganho é no acesso aos dados, não na aparência.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:22px">
+        <h3 style="margin-top:0">O que não fazemos</h3>
+        <p>Republicamos só o que o serviço público do Sicar oferece: o perímetro declarado e dez atributos de cada imóvel. Não temos APP, reserva legal, vegetação nativa nem área a recompor, nem qualquer dado que identifique proprietários. A cópia é semanal, não em tempo real. A sobreposição é calculada entre imóveis do mesmo estado. E esta é uma republicação independente, sem caráter oficial: em caso de divergência, vale o Sicar.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="numeros">
+    <div class="wrap">
+      <h2>Em números</h2>
+      <p class="sub">Tudo medido por nós, de um computador em Recife, pela internet comum, em 25/11/2026. A única estimativa é o volume do download completo de Pernambuco.</p>
+      <div class="viz" style="margin-bottom:18px">
+        <h3>Megabytes transferidos por consulta</h3>
+        <p class="cap">Contra baixar Pernambuco inteiro do Sicar, cerca de 80 MB em 22 minutos.</p>
+        <div class="plot" id="bars"></div>
+      </div>
+      <div class="grid f3">
+        <div class="card"><div class="ic">🗺️</div><h3>8.578.061 imóveis</h3><p>Os 27 estados, 5.564 municípios, em 3,7 GB de arquivos. A carga nacional leva 4 horas num servidor comum.</p></div>
+        <div class="card"><div class="ic">⚡</div><h3>160 KB para o país</h3><p>O total nacional por porte, situação ou etapa da análise vem dos resumos pré-calculados, em menos de 2 segundos.</p></div>
+        <div class="card"><div class="ic">🔁</div><h3>Uma cópia por semana</h3><p>Atualização automática aos domingos, com trava contra perda de dados e aviso de falha. Cada rodada guarda o que mudou desde a anterior.</p></div>
+      </div>
+      <h3 style="margin:34px 0 6px">O que os dados já mostram</h3>
+      <p class="sub">Três achados, feitos com a própria ferramenta, que dizem onde o cadastro precisa de atenção.</p>
+      <div class="viz" style="margin-bottom:18px">
+        <h3>Onde a análise do CAR está parada</h3>
+        <p class="cap">Imóveis do país por etapa da análise. Dos 1,3 milhão notificados que não responderam, 91% têm até 4 módulos fiscais.</p>
+        <div class="plot" id="stages"></div>
+        <div class="legend" id="stages-legend" style="margin-top:10px"></div>
+      </div>
+      <div class="grid f3">
+        <div class="card"><div class="ic">📬</div><h3>1,3 milhão sem resposta</h3><p>Imóveis analisados e notificados que aguardam o declarante. No Pará e em Alagoas, dois em cada três imóveis estão nessa etapa. <a href="https://castlaboratory.github.io/carbr-r/articles/analise.html">Ver o guia</a>.</p></div>
+        <div class="card"><div class="ic">🧩</div><h3>1 em cada 4 sobreposto</h3><p>25% dos imóveis não cancelados têm mais da metade da área dentro de outros cadastros do estado; no Acre, 63%. <a href="https://castlaboratory.github.io/carbr-r/articles/inconsistencias.html">Ver o guia</a>.</p></div>
+        <div class="card"><div class="ic">📐</div><h3>Mais área que território</h3><p>Em 35 dos 185 municípios de Pernambuco, a área declarada no CAR passa da área do município; em Catende, é o dobro.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="criterios" class="alt">
+    <div class="wrap">
+      <h2>Nos critérios da avaliação</h2>
+      <p class="sub">Os cinco critérios do edital, com o que temos a mostrar em cada um.</p>
+      <div class="card scroll">
+        <table class="cmp">
+          <thead><tr><th>Critério</th><th>O que entregamos</th></tr></thead>
+          <tbody>
+            <tr><td>Aderência ao desafio</td><td>Consulta pontual sem download, filtros na leitura, nenhuma carga de usuário sobre o Sicar, dicionário de dados e uma interface para quem não programa. Em produção, com os 27 estados.</td></tr>
+            <tr><td>Capacidade para o desenvolvimento</td><td>Construído e operado pela própria equipe: carga, publicação, dois pacotes, página, servidor MCP e documentação. Pacote Python no PyPI, pacote R enviado ao CRAN, testes automatizados em Linux e Windows, código arquivado com DOI.</td></tr>
+            <tr><td>Criatividade e inovação</td><td>Arquivos em vez de API: a indexação fica no formato, e a leitura parcial dispensa o servidor de aplicação. A mesma publicação serve mapa, programas e assistentes de IA. E um histórico semanal cria um dado que o Sicar não tem: quando cada cadastro muda de etapa.</td></tr>
+            <tr><td>Potencial de escala</td><td>Já opera em escala nacional. Mil usuários simultâneos custam o mesmo que um. Replicar é copiar os arquivos para outro armazenamento e apontar os pacotes para o novo endereço. O mesmo processo serve a outras camadas do CAR.</td></tr>
+            <tr><td>Viabilidade financeira</td><td>Custo de operação próximo de zero: 3,7 GB cabem na faixa gratuita do armazenamento, sem cobrança por tráfego; a carga roda num servidor que já existe; não há licença de software nem banco de dados para administrar.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="usar">
+    <div class="wrap">
+      <h2>Usar agora</h2>
+      <p class="sub">Quatro portas de entrada para os mesmos dados. A primeira não exige instalar nada.</p>
+      <div class="grid f2">
+        <div class="card"><div class="ic">🖱️</div><h3>No navegador</h3><p>Clique num ponto do mapa, informe o código de um imóvel ou escolha um município. A ficha sai em linguagem simples, e a página mostra quanto cada consulta transferiu.</p><p style="margin-top:12px"><a class="btn primary" href="https://car.castlab.org">Abrir a consulta →</a> <a class="btn" href="https://car.castlab.org/ajuda.html">Ajuda</a></p></div>
+        <div class="card"><div class="ic">💬</div><h3>Com um assistente</h3><p>Conecte um assistente compatível com MCP ao endereço <code>https://mcp.castlab.org/mcp</code> e pergunte em português. Oito ferramentas, todas com fonte e data.</p><p style="margin-top:12px"><a class="btn" href="https://castlaboratory.github.io/carbr-py/assistentes/">Como conectar</a></p></div>
+      </div>
+      <div class="grid f2" style="margin-top:18px">
+        <div>
+          <div class="panel">
+<pre><code><span class="c-cmt"># R</span>
+pak::<span class="c-cmd">pak</span>(<span class="c-str">"castlaboratory/carbr-r"</span>)
+<span class="c-kw">library</span>(carbr)
+
+<span class="c-cmd">car_catalog</span>()                 <span class="c-cmt"># o que está publicado</span>
+<span class="c-cmd">car_at</span>(lon = <span class="c-flag">-47.9</span>, lat = <span class="c-flag">-15.8</span>)
+<span class="c-cmd">car_summary</span>(<span class="c-kw">c</span>(<span class="c-str">"state"</span>, <span class="c-str">"size_class"</span>))
+<span class="c-cmd">car_quality_summary</span>(<span class="c-str">"PE"</span>)</code></pre>
+          </div>
+          <p class="note"><a href="https://castlaboratory.github.io/carbr-r/">Documentação do pacote R</a></p>
+        </div>
+        <div>
+          <div class="panel">
+<pre><code><span class="c-prompt">$</span> <span class="c-cmd">pip</span> install <span class="c-str">"carbr[geo]"</span>
+
+<span class="c-kw">import</span> carbr
+
+carbr.<span class="c-cmd">car_catalog</span>()
+carbr.<span class="c-cmd">car_at</span>(lon=<span class="c-flag">-47.9</span>, lat=<span class="c-flag">-15.8</span>)
+carbr.<span class="c-cmd">car_summary</span>([<span class="c-str">"state"</span>, <span class="c-str">"size_class"</span>])
+carbr.<span class="c-cmd">car_quality_summary</span>(<span class="c-str">"PE"</span>)</code></pre>
+          </div>
+          <p class="note"><a href="https://castlaboratory.github.io/carbr-py/">Documentação do pacote Python</a></p>
+        </div>
+      </div>
+      <div class="grid f3" style="margin-top:22px">
+        <div class="card"><div class="ic">✅</div><h3>Testado</h3><p>Testes automatizados nos dois pacotes, em Linux e Windows, e um teste contra os dados reais a cada mudança. O pacote R passa no check do CRAN sem erros nem avisos.</p></div>
+        <div class="card"><div class="ic">📚</div><h3>Citável</h3><p>Cada repositório tem DOI no Zenodo, e toda consulta devolve a citação da fonte e a data da publicação lida.</p></div>
+        <div class="card"><div class="ic">⚖️</div><h3>Base normativa</h3><p>A IN MMA nº 3/2014 garante o livre acesso às informações não sigilosas e não pessoais do Sicar. Não publicamos nenhum dado que identifique proprietários.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div><strong>carbr</strong> · licença MIT · André Leite, Marcos Wasiliew, Hugo Vasconcelos, Carlos Amorim, Diogo Bezerra, Júlia Nascimento Barreto, Hortênsia Nunes Braz de Oliveira · colaboradores do CastLab<br>Fonte dos dados: Sicar, Serviço Florestal Brasileiro. Republicação independente, sem caráter oficial.</div>
+    <div class="foot-links">
+      <a href="https://car.castlab.org">Consulta</a>
+      <a href="https://car.castlab.org/ajuda.html">Ajuda</a>
+      <a href="https://github.com/castlaboratory/carbr">Repositório</a>
+      <a href="https://github.com/castlaboratory/carbr/blob/main/LICENSE">Licença</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (name, attrs = {}, text) => {
+    const node = document.createElementNS(NS, name);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+  const nf = new Intl.NumberFormat("pt-BR");
+
+  // Os 107 blocos do arquivo de Pernambuco; os 4 que cobrem Petrolina.
+  {
+    const svg = el("svg", { viewBox: "0 0 1000 44", role: "img", "aria-label": "Faixa com 107 blocos do arquivo de Pernambuco, dos quais 4 são lidos para Petrolina." });
+    const n = 107, gap = 2, w = (1000 - gap * (n - 1)) / n;
+    for (let i = 0; i < n; i++) {
+      const read = i >= 73 && i <= 76;
+      svg.append(el("rect", { x: i * (w + gap), y: read ? 2 : 8, width: w, height: read ? 40 : 28, rx: 1.5,
+        fill: read ? "var(--brand-2)" : "var(--grid)" }));
+    }
+    document.getElementById("blocks").append(svg);
+  }
+
+  // Megabytes por consulta (medidos) contra o download completo (estimado).
+  {
+    const rows = [
+      ["Total do país por porte (resumo)", 0.16, "menos de 2 s"],
+      ["Imóveis num ponto do mapa", 3, "2 s"],
+      ["Um imóvel pelo código", 3, "2 s"],
+      ["Baixar Pernambuco inteiro do Sicar", 80, "22 min", true],
+    ];
+    const left = 300, right = 150, rowH = 34, width = 1000, max = 80;
+    const svg = el("svg", { viewBox: `0 0 ${width} ${rows.length * rowH + 6}`, role: "img",
+      "aria-label": "Barras: as consultas pelo carbr transferem de 0,16 a 3 megabytes; baixar Pernambuco inteiro, cerca de 80." });
+    rows.forEach(([label, mb, time, whole], i) => {
+      const y = i * rowH + 4, w = Math.max(3, (mb / max) * (width - left - right));
+      svg.append(el("text", { x: left - 12, y: y + 17, "text-anchor": "end" }, label));
+      svg.append(el("rect", { x: left, y: y + 3, width: w, height: 20, rx: 3, fill: whole ? "var(--series-2)" : "var(--series-1)" }));
+      svg.append(el("text", { x: left + w + 10, y: y + 17, class: "end" }, `${nf.format(mb)} MB · ${time}`));
+    });
+    document.getElementById("bars").append(svg);
+  }
+
+  // Imóveis por etapa da análise (publicação de 25/11/2026).
+  {
+    const stages = [
+      ["Aguardando análise", 5978517, "#9aa6ad"], ["Em análise", 109355, "#5bb0d6"],
+      ["Notificado, sem resposta", 1309319, "#f0641e"], ["Respondeu, aguarda nova análise", 134338, "#f2c230"],
+      ["Analisado", 874465, "#3fae52"], ["Cancelado", 172067, "#7a6c85"],
+    ];
+    const total = stages.reduce((s, r) => s + r[1], 0);
+    const svg = el("svg", { viewBox: "0 0 1000 46", role: "img",
+      "aria-label": "Barra empilhada: 69,7% aguardando análise, 15,3% notificados sem resposta, 10,2% analisados." });
+    let x = 0;
+    stages.forEach(([label, n, color]) => {
+      const w = (n / total) * 1000;
+      svg.append(el("rect", { x, y: 4, width: Math.max(1, w - 1.5), height: 38, rx: 2, fill: color }));
+      if (w > 90) svg.append(el("text", { x: x + w / 2, y: 28, "text-anchor": "middle", style: "fill:#10192e;font-weight:700" }, `${nf.format(Math.round(1000 * n / total) / 10)}%`));
+      x += w;
+      const key = document.createElement("span");
+      key.innerHTML = `<i class="key" style="background:${color}"></i>`;
+      key.append(`${label}: ${nf.format(n)}`);
+      document.getElementById("stages-legend").append(key);
+    });
+    document.getElementById("stages").append(svg);
+  }
+})();
+</script>
+</body>
+</html>
