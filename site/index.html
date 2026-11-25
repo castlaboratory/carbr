@@ -518,12 +518,21 @@
         <div class="card"><div class="ic">🔁</div><h3>Uma cópia por semana</h3><p>Atualização automática aos domingos, com trava contra perda de dados e aviso de falha. Cada rodada guarda o que mudou desde a anterior.</p></div>
       </div>
       <h3 style="margin:34px 0 6px">O que os dados já mostram</h3>
-      <p class="sub">Três achados, feitos com a própria ferramenta, que dizem onde o cadastro precisa de atenção.</p>
+      <p class="sub">Achados feitos com a própria ferramenta, que dizem onde o cadastro precisa de atenção.</p>
       <div class="viz" style="margin-bottom:18px">
         <h3>Onde a análise do CAR está parada</h3>
         <p class="cap">Imóveis do país por etapa da análise. Dos 1,3 milhão notificados que não responderam, 91% têm até 4 módulos fiscais.</p>
         <div class="plot" id="stages"></div>
         <div class="legend" id="stages-legend" style="margin-top:10px"></div>
+      </div>
+      <div class="viz" style="margin-bottom:18px">
+        <h3>Onde os cadastros se sobrepõem</h3>
+        <p class="cap">Parcela dos imóveis não cancelados de cada UF com mais da metade da área dentro de outros cadastros do mesmo estado. No país, 25,1%. Sobreposição não é sinônimo de disputa: inclui imóvel declarado duas vezes e lote dentro de assentamento.</p>
+        <div class="plot" id="overlap"></div>
+        <details class="tbl">
+          <summary>Valores em tabela</summary>
+          <div class="scroll"><table class="data" id="overlap-table"><thead><tr><th>UF</th><th>Mais da metade da área sobreposta</th><th>Alguma sobreposição (acima de 1% da área)</th></tr></thead><tbody></tbody></table></div>
+        </details>
       </div>
       <div class="grid f3">
         <div class="card"><div class="ic">📬</div><h3>1,3 milhão sem resposta</h3><p>Imóveis analisados e notificados que aguardam o declarante. No Pará e em Alagoas, dois em cada três imóveis estão nessa etapa. <a href="https://castlaboratory.github.io/carbr-r/articles/analise.html">Ver o guia</a>.</p></div>
@@ -667,6 +676,35 @@ carbr.<span class="c-cmd">car_quality_summary</span>(<span class="c-str">"PE"</s
       svg.append(el("text", { x: left + w + 10, y: y + 17, class: "end" }, `${nf.format(mb)} MB · ${time}`));
     });
     document.getElementById("bars").append(svg);
+  }
+
+  // Sobreposição por UF (indicadores de qualidade de 25/11/2026): [UF, % com mais da metade, % com alguma].
+  {
+    const rows = [["DF", 76.0, 89.0], ["AC", 62.9, 89.7], ["RR", 61.9, 74.2], ["AP", 59.1, 75.5], ["MA", 57.7, 78.2],
+      ["MT", 47.5, 64.0], ["AM", 46.4, 67.8], ["PA", 45.6, 66.8], ["RO", 39.8, 76.6], ["AL", 39.3, 77.2], ["PI", 32.8, 66.1],
+      ["MG", 31.2, 80.4], ["CE", 31.2, 65.5], ["PE", 30.1, 69.9], ["SE", 29.8, 68.8], ["RN", 29.7, 65.2], ["PB", 24.4, 63.6],
+      ["GO", 22.5, 60.4], ["RJ", 21.7, 68.5], ["SC", 18.3, 78.9], ["ES", 18.0, 60.1], ["PR", 17.5, 80.3], ["RS", 14.8, 79.9],
+      ["SP", 14.5, 62.4], ["MS", 12.6, 27.4], ["TO", 12.3, 32.2], ["BA", 3.4, 19.1]];
+    const width = 1000, top = 22, base = 232, max = 80, step = width / rows.length;
+    const svg = el("svg", { viewBox: `0 0 ${width} 262`, role: "img",
+      "aria-label": "Colunas por UF: de 76% dos imóveis com mais da metade da área sobreposta no Distrito Federal a 3,4% na Bahia; média do país, 25,1%." });
+    const y = (v) => base - (v / max) * (base - top);
+    rows.forEach(([uf, half], i) => {
+      const x = i * step + 5;
+      svg.append(el("rect", { x, y: y(half), width: step - 10, height: base - y(half), rx: 2, fill: "var(--series-2)" }));
+      svg.append(el("text", { x: x + (step - 10) / 2, y: y(half) - 5, "text-anchor": "middle", style: "font-size:11px" }, nf.format(Math.round(half))));
+      svg.append(el("text", { x: x + (step - 10) / 2, y: base + 18, "text-anchor": "middle", class: "end", style: "font-size:12px" }, uf));
+    });
+    svg.append(el("line", { x1: 0, x2: width, y1: y(25.1), y2: y(25.1), stroke: "var(--fg)", "stroke-width": 1.5, "stroke-dasharray": "6 5", opacity: .7 }));
+    svg.append(el("text", { x: width, y: y(25.1) - 6, "text-anchor": "end", class: "end" }, "Brasil: 25,1%"));
+    svg.append(el("line", { x1: 0, x2: width, y1: base, y2: base, stroke: "var(--axis)", "stroke-width": 1 }));
+    document.getElementById("overlap").append(svg);
+    const body = document.querySelector("#overlap-table tbody");
+    rows.forEach(([uf, half, any]) => {
+      const tr = document.createElement("tr");
+      [uf, `${nf.format(half)}%`, `${nf.format(any)}%`].forEach((v) => tr.append(Object.assign(document.createElement("td"), { textContent: v })));
+      body.append(tr);
+    });
   }
 
   // Imóveis por etapa da análise (publicação de 25/11/2026).
