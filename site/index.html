@@ -4,12 +4,21 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>carbr — os dados do Cadastro Ambiental Rural, sem baixar a base inteira</title>
-<meta name="description" content="O carbr republica a camada pública de imóveis do CAR dos 27 estados e permite consultas pontuais sem baixar a base: página de consulta, pacotes R e Python e servidor para assistentes. Proposta para o Desafio 3 do InovaCAR." />
+<meta name="description" content="O carbr republica a camada pública de imóveis do CAR dos 27 estados e permite consultas pontuais sem baixar a base: página de consulta, pacotes R e Python e servidor para assistentes." />
 <meta property="og:title" content="carbr — os dados do CAR, sem baixar a base inteira" />
 <meta property="og:description" content="Consulta por ponto, código ou município em segundos, sem carga sobre o Sicar. Em produção, código aberto." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://castlaboratory.github.io/carbr/" />
 <link rel="icon" type="image/svg+xml" href="logo.svg">
+<script>
+  // Tema: a escolha guardada, ou a preferência do sistema.
+  (() => {
+    let theme = null;
+    try { theme = localStorage.getItem("carbr-theme"); } catch {}
+    if (theme !== "light" && theme !== "dark") theme = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    document.documentElement.dataset.theme = theme;
+  })();
+</script>
 <style>
   :root {
     --bg: #0b1020;
@@ -30,8 +39,7 @@
     --grid: #263457;
     --axis: #34456f;
   }
-  @media (prefers-color-scheme: light) {
-    :root {
+  :root[data-theme="light"] {
       --bg: #f6f8fe;
       --bg-soft: #eef2fb;
       --card: #ffffff;
@@ -44,7 +52,6 @@
       --series-2: #eb6834;
       --grid: #e6ebf7;
       --axis: #c3cde6;
-    }
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -190,6 +197,14 @@
   table.data th:first-child, table.data td:first-child { text-align: left; }
   table.data th { color: var(--muted); font-weight: 700; }
   table.data td { color: var(--fg); }
+  :root { color-scheme: dark; }
+  :root[data-theme="light"] { color-scheme: light; }
+  .theme { cursor: pointer; font: inherit; font-size: 1.05rem; line-height: 1; padding: 10px 13px; }
+  .nav-links a, .nav-links button { white-space: nowrap; }
+  .nav-links { gap: 18px; }
+  .theme:focus-visible, .btn:focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; }
+  @media (max-width: 720px) { .nav-links { gap: 10px; } }
+
   /* Diagramas em SVG: herdam as cores do tema */
   .plot svg text { font-size: 14px; }
   .plot svg .d-title { fill: var(--fg); font-weight: 700; font-size: 15px; }
@@ -208,7 +223,7 @@
   .plot svg .d-chip text { font-size: 13px; fill: var(--fg); }
   @media (max-width: 720px) { .plot { overflow-x: auto; } .plot svg { min-width: 760px; } #blocks svg, #stages svg { min-width: 0; } }
 
-  /* O briefing, item a item */
+  /* O que dá para fazer, item a item */
   .item { display: grid; grid-template-columns: .8fr 1.2fr; gap: 26px; padding: 26px 0; border-top: 1px solid var(--border); }
   .item:first-of-type { border-top: 0; padding-top: 6px; }
   @media (max-width: 860px) { .item { grid-template-columns: 1fr; gap: 12px; } }
@@ -227,12 +242,13 @@
   <div class="wrap nav-inner">
     <div class="brand"><img class="logo" src="logo.svg" alt="Logo do carbr" width="28" height="32"> carbr</div>
     <nav class="nav-links">
-      <a class="hide-sm" href="#problema">O problema</a>
+      <a class="hide-sm" href="#problema">Problema</a>
       <a class="hide-sm" href="#como">Como funciona</a>
-      <a class="hide-sm" href="#briefing">O briefing, item a item</a>
-      <a class="hide-sm" href="#numeros">Em números</a>
-      <a class="hide-sm" href="#criterios">Critérios</a>
+      <a class="hide-sm" href="#recursos">Recursos</a>
+      <a class="hide-sm" href="#numeros">Números</a>
+      <a class="hide-sm" href="#desenho">Por que assim</a>
       <a class="hide-sm" href="#usar">Usar</a>
+      <button class="btn theme" id="theme" type="button" aria-label="Mudar para o tema claro"></button>
       <a class="btn" href="https://car.castlab.org">Abrir a consulta ↗</a>
     </nav>
   </div>
@@ -242,7 +258,7 @@
   <section class="hero">
     <div class="wrap hero-grid">
       <div>
-        <span class="eyebrow">◆ InovaCAR · Desafio 3 · acesso aos dados do CAR</span>
+        <span class="eyebrow">◆ Cadastro Ambiental Rural · dados abertos</span>
         <h1>Os dados do CAR, <span class="grad">sem baixar a base inteira</span>.</h1>
         <p class="lead">O carbr republica a camada pública de imóveis do Sicar, dos 27 estados, num formato em que cada consulta transfere só o trecho de que precisa. Já está em produção: página de consulta, pacotes em R e Python e um servidor para assistentes.</p>
         <div class="badges">
@@ -254,7 +270,7 @@
         </div>
         <div class="cta">
           <a class="btn primary" href="https://car.castlab.org">Consultar no mapa →</a>
-          <a class="btn" href="#briefing">O briefing, item a item</a>
+          <a class="btn" href="#recursos">O que dá para fazer</a>
           <a class="btn" href="https://github.com/castlaboratory/carbr">GitHub ★</a>
         </div>
       </div>
@@ -280,8 +296,8 @@
 
   <section id="problema" class="alt">
     <div class="wrap">
-      <h2>O problema que o desafio descreve</h2>
-      <p class="sub">O briefing do InovaCAR resume assim: para fazer uma consulta regional ou pontual, hoje é preciso baixar a base completa, o que gera tráfego excessivo e lentidão nos servidores do Sicar. E faltam interfaces simples para quem não é técnico.</p>
+      <h2>O problema</h2>
+      <p class="sub">Os dados do CAR são públicos, mas para fazer uma consulta regional ou pontual é preciso baixar a base completa de um estado. Isso é lento para quem consulta, pesa nos servidores do Sicar e deixa de fora quem não é técnico.</p>
       <div class="viz">
         <h3>Uma pergunta sobre um imóvel, antes e depois</h3>
         <p class="cap">Medido por nós, de um computador em Recife. O volume do download completo é estimado a partir de amostras; o tempo foi medido.</p>
@@ -390,13 +406,13 @@
     </div>
   </section>
 
-  <section id="briefing" class="alt">
+  <section id="recursos" class="alt">
     <div class="wrap">
-      <h2>O que o briefing pede, item a item</h2>
-      <p class="sub">Cada linha é uma característica ou um resultado esperado do Desafio 3, com o que já entregamos e como fazer. Onde ainda não atendemos, está dito.</p>
+      <h2>O que dá para fazer</h2>
+      <p class="sub">Nove necessidades de quem trabalha com o CAR, com o que já está pronto e como usar. Onde ainda falta, está dito.</p>
 
       <div class="item">
-        <div class="ask"><span class="tag ok">Atende</span><h3>Consultas pontuais, sem baixar a base</h3><p>O briefing pede "APIs para consultas pontuais e específicas", sem o download completo.</p></div>
+        <div class="ask"><span class="tag ok">Pronto</span><h3>Consultas pontuais, sem baixar a base</h3><p>Saber o que está declarado num lugar, ou achar um imóvel, sem o download do estado.</p></div>
         <div class="how">
           <p>Três consultas diretas: por ponto no mapa, por código do imóvel e por município. Na <a href="https://car.castlab.org">página</a>, é um clique. Nos pacotes:</p>
           <div class="panel"><pre><code><span class="c-cmd">car_at</span>(lon = <span class="c-flag">-40.5</span>, lat = <span class="c-flag">-9.2</span>)                  <span class="c-cmt"># imóveis num ponto · 3 MB, 2 s</span>
@@ -406,7 +422,7 @@
       </div>
 
       <div class="item">
-        <div class="ask"><span class="tag ok">Atende</span><h3>Filtros antes do download</h3><p>"Filtros avançados para pesquisas customizadas pré-download."</p></div>
+        <div class="ask"><span class="tag ok">Pronto</span><h3>Filtros antes do download</h3><p>Escolher o recorte antes, e transferir só o que atende a ele.</p></div>
         <div class="how">
           <p>Os filtros são aplicados na leitura: só os blocos que podem atender ao filtro são transferidos. Há filtros por situação, porte, tipo, município e retângulo; para os demais, uma tabela preguiçosa aceita qualquer condição.</p>
           <div class="panel"><pre><code><span class="c-cmd">car_properties</span>(<span class="c-str">"PE"</span>, status = <span class="c-str">"pending"</span>, size_class = <span class="c-str">"small"</span>, geometry = <span class="c-kw">FALSE</span>)
@@ -414,12 +430,12 @@
 <span class="c-cmd">car_tbl</span>(<span class="c-str">"PA"</span>) |&gt;                                   <span class="c-cmt"># qualquer filtro, com dplyr</span>
   <span class="c-cmd">filter</span>(condition == <span class="c-str">"Analisado, aguardando atendimento a notificação"</span>, area_ha &gt; <span class="c-flag">100</span>) |&gt;
   <span class="c-cmd">collect</span>()</code></pre></div>
-          <p class="note">O exemplo do briefing, "imóveis com área a recompor", depende de camadas que o serviço público não traz; ver os limites, ao fim desta seção.</p>
+          <p class="note">Filtros como "imóveis com área a recompor" dependem de camadas que o serviço público não traz; ver os limites, ao fim desta seção.</p>
         </div>
       </div>
 
       <div class="item">
-        <div class="ask"><span class="tag part">Parcial</span><h3>Classificação, qualificação e clusterização</h3><p>"Algoritmos de classificação, qualificação e clusterização automática de imóveis do CAR por padrões."</p></div>
+        <div class="ask"><span class="tag part">Em parte</span><h3>Classificar e qualificar os imóveis</h3><p>Separar os cadastros por padrões e apontar os que têm sinais de inconsistência.</p></div>
         <div class="how">
           <p><b>Qualificação:</b> para cada imóvel não cancelado do país, calculamos a parcela da área sobreposta a outros cadastros e a parcela fora do município declarado. <b>Classificação:</b> a etapa da análise em seis categorias e uma triagem em lote. <b>Clusterização</b> por tipologia de municípios ainda não foi feita.</p>
           <div class="panel"><pre><code><span class="c-cmd">car_quality</span>(<span class="c-str">"PE"</span>, municipality = <span class="c-str">"Petrolina"</span>)   <span class="c-cmt"># overlap_share, outside_share por imóvel</span>
@@ -429,7 +445,7 @@
       </div>
 
       <div class="item">
-        <div class="ask"><span class="tag part">Parcial</span><h3>Linha do tempo dos gargalos</h3><p>"Dashboard gerencial em formato de linha do tempo para monitoramento de gargalos no ciclo de vida do registro."</p></div>
+        <div class="ask"><span class="tag part">Em parte</span><h3>Linha do tempo dos gargalos</h3><p>Acompanhar onde os cadastros ficam parados ao longo do ciclo da análise.</p></div>
         <div class="how">
           <p>O Sicar não informa quando um cadastro muda de etapa. Por isso, a cada atualização guardamos o resumo da semana e o fluxo entre as duas cargas: quantos imóveis passaram de cada etapa para cada outra, por estado. A série começou em 25/11/2026; o painel sobre ela está em construção. O retrato atual, por etapa e por ano de criação, já existe.</p>
           <div class="panel"><pre><code><span class="c-cmd">car_summary</span>(<span class="c-kw">c</span>(<span class="c-str">"state"</span>, <span class="c-str">"condition"</span>))            <span class="c-cmt"># onde a análise está parada, por UF</span>
@@ -439,7 +455,7 @@
       </div>
 
       <div class="item">
-        <div class="ask"><span class="tag ok">Atende</span><h3>Perguntas em linguagem natural</h3><p>"Chatbots com suporte ao processamento de linguagem natural."</p></div>
+        <div class="ask"><span class="tag ok">Pronto</span><h3>Perguntas em linguagem natural</h3><p>Perguntar em português, sem escrever código nem montar filtros.</p></div>
         <div class="how">
           <p>Um servidor do protocolo MCP expõe as consultas a qualquer assistente compatível. A pessoa pergunta "quantos imóveis notificados há em Marabá?" e o assistente responde com o dado real, a fonte e a data. Não mantemos um modelo de linguagem: o custo é de quem usa o assistente.</p>
           <div class="panel"><pre><code><span class="c-prompt">$</span> <span class="c-cmd">claude</span> mcp add --transport http car https://mcp.castlab.org/mcp
@@ -450,21 +466,21 @@
       </div>
 
       <div class="item">
-        <div class="ask"><span class="tag ok">Atende</span><h3>Hub de conhecimento</h3><p>"Central de conhecimento do Sicar" com guias rápidos, FAQ, biblioteca técnica e legislação.</p></div>
+        <div class="ask"><span class="tag ok">Pronto</span><h3>Central de conhecimento</h3><p>Guias rápidos, perguntas frequentes, dicionário de dados e legislação num só lugar.</p></div>
         <div class="how">
           <p>A <a href="https://car.castlab.org/ajuda.html">central de ajuda</a> explica em linguagem simples o que é o CAR, cada situação e cada etapa da análise, traz perguntas frequentes, o dicionário de dados e a legislação. Três guias mostram análises reproduzíveis: <a href="https://castlaboratory.github.io/carbr-r/articles/carbr.html">primeiros passos</a>, <a href="https://castlaboratory.github.io/carbr-r/articles/inconsistencias.html">inconsistências do cadastro</a> e <a href="https://castlaboratory.github.io/carbr-r/articles/analise.html">onde a análise está parada</a>. Ainda não há vídeos.</p>
         </div>
       </div>
 
       <div class="item">
-        <div class="ask"><span class="tag ok">Atende</span><h3>Menos banda e menos carga no Sicar</h3><p>Resultado esperado: "redução significativa no consumo de largura de banda e carga computacional dos servidores do Sicar".</p></div>
+        <div class="ask"><span class="tag ok">Pronto</span><h3>Menos banda e menos carga no Sicar</h3><p>Atender a muitos usuários sem multiplicar o tráfego sobre os servidores do governo.</p></div>
         <div class="how">
           <p>Nenhuma consulta de usuário chega ao Sicar. Só a atualização semanal o acessa: cerca de 1.700 requisições sequenciais, em 4 horas. E cada consulta transfere uma fração do que o download completo exigiria; os números estão na seção seguinte.</p>
         </div>
       </div>
 
       <div class="item">
-        <div class="ask"><span class="tag part">Parcial</span><h3>Agilidade na análise de crédito</h3><p>Resultado esperado: "agilidade no processamento de análises de crédito sustentável e conformidade socioambiental".</p></div>
+        <div class="ask"><span class="tag part">Em parte</span><h3>Triagem para crédito e conformidade</h3><p>Verificar de uma vez os imóveis de uma carteira, para crédito e conformidade socioambiental.</p></div>
         <div class="how">
           <p>Uma triagem em lote devolve, para uma lista de códigos, a situação, a etapa da análise e um resultado simples. Trezentos códigos são verificados em menos de 10 segundos. Ela diz só o que consta na camada pública: não cobre embargos nem sobreposição com terras indígenas ou unidades de conservação.</p>
           <div class="panel"><pre><code><span class="c-cmd">car_check</span>(<span class="c-kw">c</span>(<span class="c-str">"PE-2611101-588BC484…"</span>, <span class="c-str">"PA-1500206-8CE6BFB2…"</span>))
@@ -474,9 +490,9 @@
       </div>
 
       <div class="item">
-        <div class="ask"><span class="tag ok">Atende</span><h3>Código aberto, sem dependência de fornecedor</h3><p>"Soluções em código aberto", e a rejeição a propostas conceituais ou a redesign sem ganho no backend.</p></div>
+        <div class="ask"><span class="tag ok">Pronto</span><h3>Código aberto, sem dependência de fornecedor</h3><p>Poder auditar, reproduzir e levar para outro lugar.</p></div>
         <div class="how">
-          <p>Tudo é público, sob licença MIT, e arquivado com DOI: a <a href="https://github.com/castlaboratory/carbr-etl">carga</a>, os pacotes em <a href="https://github.com/castlaboratory/carbr-r">R</a> e <a href="https://github.com/castlaboratory/carbr-py">Python</a> e o <a href="https://github.com/castlaboratory/carbr-mcp">servidor MCP</a>. Os arquivos seguem um padrão aberto e mudam de provedor em horas. Não é uma proposta: está em produção, e o ganho é no acesso aos dados, não na aparência.</p>
+          <p>Tudo é público, sob licença MIT, e arquivado com DOI: a <a href="https://github.com/castlaboratory/carbr-etl">carga</a>, os pacotes em <a href="https://github.com/castlaboratory/carbr-r">R</a> e <a href="https://github.com/castlaboratory/carbr-py">Python</a> e o <a href="https://github.com/castlaboratory/carbr-mcp">servidor MCP</a>. Os arquivos seguem um padrão aberto e mudam de provedor em horas. Está em produção, e o ganho é no acesso aos dados, não só na aparência.</p>
         </div>
       </div>
 
@@ -517,19 +533,20 @@
     </div>
   </section>
 
-  <section id="criterios" class="alt">
+  <section id="desenho" class="alt">
     <div class="wrap">
-      <h2>Nos critérios da avaliação</h2>
-      <p class="sub">Os cinco critérios do edital, com o que temos a mostrar em cada um.</p>
+      <h2>Por que assim</h2>
+      <p class="sub">As escolhas de desenho e o que cada uma traz.</p>
       <div class="card scroll">
         <table class="cmp">
-          <thead><tr><th>Critério</th><th>O que entregamos</th></tr></thead>
+          <thead><tr><th>Escolha</th><th>O que traz</th></tr></thead>
           <tbody>
-            <tr><td>Aderência ao desafio</td><td>Consulta pontual sem download, filtros na leitura, nenhuma carga de usuário sobre o Sicar, dicionário de dados e uma interface para quem não programa. Em produção, com os 27 estados.</td></tr>
-            <tr><td>Capacidade para o desenvolvimento</td><td>Construído e operado pela própria equipe: carga, publicação, dois pacotes, página, servidor MCP e documentação. Pacote Python no PyPI, pacote R enviado ao CRAN, testes automatizados em Linux e Windows, código arquivado com DOI.</td></tr>
-            <tr><td>Criatividade e inovação</td><td>Arquivos em vez de API: a indexação fica no formato, e a leitura parcial dispensa o servidor de aplicação. A mesma publicação serve mapa, programas e assistentes de IA. E um histórico semanal cria um dado que o Sicar não tem: quando cada cadastro muda de etapa.</td></tr>
-            <tr><td>Potencial de escala</td><td>Já opera em escala nacional. Mil usuários simultâneos custam o mesmo que um. Replicar é copiar os arquivos para outro armazenamento e apontar os pacotes para o novo endereço. O mesmo processo serve a outras camadas do CAR.</td></tr>
-            <tr><td>Viabilidade financeira</td><td>Custo de operação próximo de zero: 3,7 GB cabem na faixa gratuita do armazenamento, sem cobrança por tráfego; a carga roda num servidor que já existe; não há licença de software nem banco de dados para administrar.</td></tr>
+            <tr><td>Arquivos em vez de API</td><td>A indexação fica no formato, e a leitura parcial dispensa o servidor de aplicação. Não há banco de dados para administrar nem serviço para cair.</td></tr>
+            <tr><td>Uma publicação, vários usos</td><td>Os mesmos arquivos servem o mapa, os programas em R e Python e os assistentes de IA. Qualquer ferramenta que leia Parquet também os lê, sem depender de nós.</td></tr>
+            <tr><td>Cópia semanal com histórico</td><td>Nenhuma consulta de usuário chega ao Sicar. E guardar o que mudou a cada semana cria um dado que o Sicar não oferece: quando cada cadastro muda de etapa.</td></tr>
+            <tr><td>Escala sem custo adicional</td><td>Já opera com os 27 estados. Mil usuários simultâneos custam o mesmo que um: 3,7 GB cabem na faixa gratuita do armazenamento, sem cobrança por tráfego, e a carga roda num servidor comum.</td></tr>
+            <tr><td>Padrões abertos</td><td>Replicar é copiar os arquivos para outro armazenamento e apontar os pacotes para o novo endereço. O mesmo processo serve a outras camadas do CAR.</td></tr>
+            <tr><td>Software publicado e testado</td><td>Pacote Python no PyPI, pacote R enviado ao CRAN, testes automatizados em Linux e Windows, código arquivado com DOI.</td></tr>
           </tbody>
         </table>
       </div>
@@ -595,6 +612,22 @@ carbr.<span class="c-cmd">car_quality_summary</span>(<span class="c-str">"PE"</s
 
 <script>
 (() => {
+  // Seletor de tema: o botão diz para qual tema ele muda.
+  const button = document.getElementById("theme");
+  const show = () => {
+    const light = document.documentElement.dataset.theme === "light";
+    button.textContent = light ? "☾" : "☀";
+    button.title = light ? "Tema escuro" : "Tema claro";
+    button.setAttribute("aria-label", light ? "Mudar para o tema escuro" : "Mudar para o tema claro");
+  };
+  button.addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("carbr-theme", next); } catch {}
+    show();
+  });
+  show();
+
   const NS = "http://www.w3.org/2000/svg";
   const el = (name, attrs = {}, text) => {
     const node = document.createElementNS(NS, name);
