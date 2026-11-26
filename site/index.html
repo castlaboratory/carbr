@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>carbr — os dados do Cadastro Ambiental Rural, sem baixar a base inteira</title>
-<meta name="description" content="O carbr republica a camada pública de imóveis do CAR dos 27 estados e permite consultas pontuais sem baixar a base: página de consulta, pacotes R e Python e servidor para assistentes." />
-<meta property="og:title" content="carbr — os dados do CAR, sem baixar a base inteira" />
-<meta property="og:description" content="Consulta por ponto, código ou município em segundos, sem carga sobre o Sicar. Em produção, código aberto." />
+<title>carbr — os dados do Cadastro Ambiental Rural, prontos para análise</title>
+<meta name="description" content="O carbr republica a camada pública de imóveis do CAR dos 27 estados e os entrega prontos para análise, sem baixar a base inteira: pacotes em R e Python, indicadores de qualidade, tipologia de municípios, servidor para assistentes de IA e página de consulta." />
+<meta property="og:title" content="carbr — os dados do CAR, prontos para análise" />
+<meta property="og:description" content="O país inteiro numa linha de R ou de Python, sem baixar a base e sem carga sobre o Sicar. Em produção, código aberto." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://castlaboratory.github.io/carbr/" />
 <link rel="icon" type="image/svg+xml" href="logo.svg">
@@ -268,8 +268,8 @@
     <div class="wrap hero-grid">
       <div>
         <span class="eyebrow">◆ Cadastro Ambiental Rural · dados abertos</span>
-        <h1>Os dados do CAR, <span class="grad">sem baixar a base inteira</span>.</h1>
-        <p class="lead">O carbr republica a camada pública de imóveis do Sicar, dos 27 estados, num formato em que cada consulta transfere só o trecho de que precisa. Já está em produção: página de consulta, pacotes em R e Python e um servidor para assistentes.</p>
+        <h1>Os dados do CAR, <span class="grad">prontos para análise</span>.</h1>
+        <p class="lead">O carbr republica a camada pública de imóveis do Sicar, dos 27 estados, num formato que um programa lê aos pedaços, sem baixar a base inteira. Já está em produção: pacotes em R e Python, indicadores e análises prontas, um servidor para assistentes de IA e uma página de consulta.</p>
         <div class="badges">
           <a href="https://pypi.org/project/carbr/"><img alt="PyPI" src="https://img.shields.io/pypi/v/carbr?cacheSeconds=3600"></a>
           <a href="https://github.com/castlaboratory/carbr-r/actions/workflows/R-CMD-check.yaml"><img alt="R CMD check" src="https://github.com/castlaboratory/carbr-r/actions/workflows/R-CMD-check.yaml/badge.svg"></a>
@@ -278,27 +278,26 @@
           <img alt="27 UFs" src="https://img.shields.io/badge/cobertura-27%20UFs-brightgreen.svg">
         </div>
         <div class="cta">
-          <a class="btn primary" href="https://car.castlab.org">Consultar no mapa →</a>
+          <a class="btn primary" href="#usar">Começar com os pacotes →</a>
           <a class="btn" href="#recursos">O que dá para fazer</a>
+          <a class="btn" href="https://car.castlab.org">Consultar no mapa</a>
           <a class="btn" href="https://github.com/castlaboratory/carbr">GitHub ★</a>
         </div>
       </div>
       <div class="term" aria-hidden="true">
-        <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">R · que imóveis estão declarados aqui?</span></div>
+        <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">R · o país inteiro, sem baixar a base</span></div>
 <pre><code><span class="c-kw">library</span>(carbr)
-
-<span class="c-cmt"># um ponto no Distrito Federal</span>
-<span class="c-cmd">car_at</span>(lon = <span class="c-flag">-47.9</span>, lat = <span class="c-flag">-15.8</span>)
-<span class="c-ok">#&gt; 2 imóveis · sobreposição</span>
-<span class="c-cmt">#&gt;  Brasília   94.379 ha  cancelado</span>
-<span class="c-cmt">#&gt;  Brasília  103.415 ha  cancelado</span>
 
 <span class="c-cmt"># o país inteiro, em segundos</span>
 <span class="c-cmd">car_summary</span>(<span class="c-str">"size_class"</span>)
 <span class="c-cmt">#&gt;  small   8.036.736</span>
 <span class="c-cmt">#&gt;  medium    398.351</span>
 <span class="c-cmt">#&gt;  large     142.974</span>
-<span class="c-ok">#&gt; 160 KB transferidos</span></code></pre>
+<span class="c-ok">#&gt; 160 KB transferidos</span>
+
+<span class="c-cmt"># um município inteiro, com os perímetros</span>
+<span class="c-cmd">car_properties</span>(<span class="c-str">"PE"</span>, municipality = <span class="c-str">"Petrolina"</span>)
+<span class="c-ok">#&gt; 10.918 imóveis · 4 de 107 blocos lidos</span></code></pre>
       </div>
     </div>
   </section>
@@ -306,19 +305,19 @@
   <section id="problema" class="alt">
     <div class="wrap">
       <h2>O problema</h2>
-      <p class="sub">Os dados do CAR são públicos, mas para fazer uma consulta regional ou pontual é preciso baixar a base completa de um estado. Isso é lento para quem consulta, pesa nos servidores do Sicar e deixa de fora quem não é técnico.</p>
+      <p class="sub">Os dados do CAR são públicos, e o portal oficial de consulta do Sicar mostra um imóvel de cada vez, na tela. Mas quem precisa analisar os dados num programa (um município, um estado, o país, ou uma lista de imóveis) ainda tem de baixar e montar a base, estado por estado. Isso é lento, pesa nos servidores do Sicar e deixa a análise na mão de poucos.</p>
       <div class="viz">
-        <h3>Uma pergunta sobre um imóvel, antes e depois</h3>
-        <p class="cap">Medido por nós, de um computador em Recife. O volume do download completo é estimado a partir de amostras; o tempo foi medido.</p>
+        <h3>Os imóveis de um município num programa, antes e depois</h3>
+        <p class="cap">Petrolina, com 10.918 imóveis. Medido por nós, de um computador em Recife: baixando o estado pelo serviço do Sicar, e pelo pacote. O volume do download completo é estimado a partir de amostras; os tempos foram medidos.</p>
         <div class="plot">
-          <svg viewBox="0 0 1000 300" role="img" aria-label="Diagrama: hoje, a consulta baixa o estado inteiro do Sicar em 22 minutos; com o carbr, lê 3 megabytes em 2 segundos sem tocar o Sicar.">
+          <svg viewBox="0 0 1000 300" role="img" aria-label="Diagrama: para analisar um município, baixar o estado inteiro do Sicar leva 22 minutos; com o carbr, o programa lê 5 megabytes em 4 segundos, sem tocar o Sicar.">
             <defs>
               <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-arrow"/></marker>
             </defs>
-            <text x="0" y="22" class="d-lane">Hoje</text>
+            <text x="0" y="22" class="d-lane">Baixando a base</text>
             <rect x="0" y="36" width="170" height="70" rx="12" class="d-box"/>
-            <text x="85" y="66" text-anchor="middle" class="d-title">Quem consulta</text>
-            <text x="85" y="88" text-anchor="middle">quer 1 imóvel</text>
+            <text x="85" y="66" text-anchor="middle" class="d-title">Quem analisa</text>
+            <text x="85" y="88" text-anchor="middle">quer 1 município</text>
             <line x1="176" y1="74" x2="552" y2="74" class="d-flow heavy"/><path d="M548,62 L564,74 L548,86 z" style="fill:var(--series-2)"/>
             <text x="368" y="56" text-anchor="middle" class="d-warn">o estado inteiro: ~80 MB · 88 requisições · 22 min</text>
             <rect x="566" y="36" width="200" height="70" rx="12" class="d-box warn"/>
@@ -329,10 +328,10 @@
 
             <text x="0" y="170" class="d-lane">Com o carbr</text>
             <rect x="0" y="184" width="170" height="70" rx="12" class="d-box"/>
-            <text x="85" y="214" text-anchor="middle" class="d-title">Quem consulta</text>
-            <text x="85" y="236" text-anchor="middle">quer 1 imóvel</text>
+            <text x="85" y="214" text-anchor="middle" class="d-title">Quem analisa</text>
+            <text x="85" y="236" text-anchor="middle">quer 1 município</text>
             <line x1="176" y1="219" x2="430" y2="219" class="d-flow" marker-end="url(#arrow)"/>
-            <text x="303" y="206" text-anchor="middle" class="d-good">só o trecho: 3 MB · 2 s</text>
+            <text x="303" y="206" text-anchor="middle" class="d-good">só o trecho: 5 MB · 4 s</text>
             <rect x="436" y="184" width="220" height="70" rx="12" class="d-box good"/>
             <text x="546" y="214" text-anchor="middle" class="d-title">car.castlab.org</text>
             <text x="546" y="236" text-anchor="middle">arquivos estáticos</text>
@@ -421,12 +420,12 @@
       <p class="sub">Nove necessidades de quem trabalha com o CAR, com o que já está pronto e como usar. Onde ainda falta, está dito.</p>
 
       <div class="item">
-        <div class="ask"><span class="tag ok">Pronto</span><h3>Consultas pontuais, sem baixar a base</h3><p>Saber o que está declarado num lugar, ou achar um imóvel, sem o download do estado.</p></div>
+        <div class="ask"><span class="tag ok">Pronto</span><h3>Consultas por programa, sem baixar a base</h3><p>Trazer um município, um ponto ou um imóvel para dentro de um script, sem o download do estado.</p></div>
         <div class="how">
-          <p>Três consultas diretas: por ponto no mapa, por código do imóvel e por município. Na <a href="https://car.castlab.org">página</a>, é um clique. Nos pacotes:</p>
-          <div class="panel"><pre><code><span class="c-cmd">car_at</span>(lon = <span class="c-flag">-40.5</span>, lat = <span class="c-flag">-9.2</span>)                  <span class="c-cmt"># imóveis num ponto · 3 MB, 2 s</span>
-<span class="c-cmd">car_property</span>(<span class="c-str">"PE-2611101-588BC484…"</span>)          <span class="c-cmt"># um imóvel pelo código · 3 MB, 2 s</span>
-<span class="c-cmd">car_properties</span>(<span class="c-str">"PE"</span>, municipality = <span class="c-str">"Petrolina"</span>) <span class="c-cmt"># os 10.918 imóveis do município</span></code></pre></div>
+          <p>Três consultas diretas nos pacotes: por município, por ponto e por código do imóvel. Cada uma lê só os blocos do arquivo que interessam:</p>
+          <div class="panel"><pre><code><span class="c-cmd">car_properties</span>(<span class="c-str">"PE"</span>, municipality = <span class="c-str">"Petrolina"</span>) <span class="c-cmt"># 10.918 imóveis · 5 MB, 4 s</span>
+<span class="c-cmd">car_at</span>(lon = <span class="c-flag">-40.5</span>, lat = <span class="c-flag">-9.2</span>)                  <span class="c-cmt"># imóveis num ponto · 3 MB, 2 s</span>
+<span class="c-cmd">car_property</span>(<span class="c-str">"PE-2611101-588BC484…"</span>)          <span class="c-cmt"># um imóvel pelo código · 3 MB, 2 s</span></code></pre></div>
         </div>
       </div>
 
@@ -508,6 +507,11 @@
       </div>
 
       <div class="card" style="margin-top:22px">
+        <h3 style="margin-top:0">E o portal oficial de consulta?</h3>
+        <p>O Sicar tem o <a href="https://consulta.car.gov.br">Consulta Pública</a>, que busca um imóvel pelo número de registro e oferece downloads por município. Ele é a fonte oficial, e é o lugar certo para conferir um cadastro. O carbr não o substitui: serve a quem precisa dos dados dentro de um programa, sem login nem captcha, e acrescenta o que o portal não traz, como os totais do país numa linha de código, os indicadores de sobreposição, o cruzamento com terras indígenas e unidades de conservação, a tipologia dos municípios e o histórico semanal.</p>
+      </div>
+
+      <div class="card" style="margin-top:18px">
         <h3 style="margin-top:0">O que não fazemos</h3>
         <p>Republicamos só o que o serviço público do Sicar oferece: o perímetro declarado e dez atributos de cada imóvel. Não temos APP, reserva legal, vegetação nativa nem área a recompor, nem qualquer dado que identifique proprietários. As terras indígenas e as unidades de conservação vêm da Funai e do cadastro nacional do MMA, na edição mais recente disponível para download. A cópia é semanal, não em tempo real. A sobreposição é calculada entre imóveis do mesmo estado. E esta é uma republicação independente, sem caráter oficial: em caso de divergência, vale o Sicar.</p>
       </div>
@@ -520,7 +524,7 @@
       <p class="sub">Tudo medido por nós, de um computador em Recife, pela internet comum, em 25/11/2026. A única estimativa é o volume do download completo de Pernambuco.</p>
       <div class="viz" style="margin-bottom:18px">
         <h3>Megabytes transferidos por consulta</h3>
-        <p class="cap">Contra baixar Pernambuco inteiro do Sicar, cerca de 80 MB em 22 minutos.</p>
+        <p class="cap">Pelos pacotes, contra baixar Pernambuco inteiro do Sicar, cerca de 80 MB em 22 minutos.</p>
         <div class="plot" id="bars"></div>
       </div>
       <div class="grid f3">
@@ -598,12 +602,8 @@
   <section id="usar">
     <div class="wrap">
       <h2>Usar agora</h2>
-      <p class="sub">Quatro portas de entrada para os mesmos dados. A primeira não exige instalar nada.</p>
+      <p class="sub">Quatro portas de entrada para os mesmos dados: os pacotes em R e em Python, para quem analisa; um assistente de IA, para quem prefere perguntar; e o mapa, para quem não programa.</p>
       <div class="grid f2">
-        <div class="card"><div class="ic">🖱️</div><h3>No navegador</h3><p>Clique num ponto do mapa, informe o código de um imóvel ou escolha um município. A ficha sai em linguagem simples, e a página mostra quanto cada consulta transferiu.</p><p style="margin-top:12px"><a class="btn primary" href="https://car.castlab.org">Abrir a consulta →</a> <a class="btn" href="https://car.castlab.org/ajuda.html">Ajuda</a></p></div>
-        <div class="card"><div class="ic">💬</div><h3>Com um assistente</h3><p>Conecte um assistente compatível com MCP ao endereço <code>https://mcp.castlab.org/mcp</code> e pergunte em português. Oito ferramentas, todas com fonte e data.</p><p style="margin-top:12px"><a class="btn" href="https://castlaboratory.github.io/carbr-py/assistentes/">Como conectar</a></p></div>
-      </div>
-      <div class="grid f2" style="margin-top:18px">
         <div>
           <div class="panel">
 <pre><code><span class="c-cmt"># R</span>
@@ -630,6 +630,10 @@ carbr.<span class="c-cmd">car_quality_summary</span>(<span class="c-str">"PE"</s
           </div>
           <p class="note"><a href="https://castlaboratory.github.io/carbr-py/">Documentação do pacote Python</a></p>
         </div>
+      </div>
+      <div class="grid f2" style="margin-top:18px">
+        <div class="card"><div class="ic">💬</div><h3>Com um assistente</h3><p>Conecte um assistente compatível com MCP ao endereço <code>https://mcp.castlab.org/mcp</code> e pergunte em português. Oito ferramentas, todas com fonte e data.</p><p style="margin-top:12px"><a class="btn" href="https://castlaboratory.github.io/carbr-py/assistentes/">Como conectar</a></p></div>
+        <div class="card"><div class="ic">🖱️</div><h3>No navegador, para quem não programa</h3><p>Clique num ponto do mapa, informe o código de um imóvel ou escolha um município. A ficha sai em linguagem simples, e a página mostra quanto cada consulta transferiu.</p><p style="margin-top:12px"><a class="btn" href="https://car.castlab.org">Abrir a consulta →</a> <a class="btn" href="https://car.castlab.org/ajuda.html">Ajuda</a></p></div>
       </div>
       <div class="grid f3" style="margin-top:22px">
         <div class="card"><div class="ic">✅</div><h3>Testado</h3><p>Testes automatizados nos dois pacotes, em Linux e Windows, e um teste contra os dados reais a cada mudança. O pacote R passa no check do CRAN sem erros nem avisos.</p></div>
@@ -695,13 +699,14 @@ carbr.<span class="c-cmd">car_quality_summary</span>(<span class="c-str">"PE"</s
   {
     const rows = [
       ["Total do país por porte (resumo)", 0.16, "menos de 2 s"],
-      ["Imóveis num ponto do mapa", 3, "2 s"],
+      ["Imóveis num ponto", 3, "2 s"],
       ["Um imóvel pelo código", 3, "2 s"],
+      ["Os 10.918 imóveis de Petrolina", 5, "4 s"],
       ["Baixar Pernambuco inteiro do Sicar", 80, "22 min", true],
     ];
     const left = 300, right = 150, rowH = 34, width = 1000, max = 80;
     const svg = el("svg", { viewBox: `0 0 ${width} ${rows.length * rowH + 6}`, role: "img",
-      "aria-label": "Barras: as consultas pelo carbr transferem de 0,16 a 3 megabytes; baixar Pernambuco inteiro, cerca de 80." });
+      "aria-label": "Barras: as consultas pelo carbr transferem de 0,16 a 5 megabytes; baixar Pernambuco inteiro, cerca de 80." });
     rows.forEach(([label, mb, time, whole], i) => {
       const y = i * rowH + 4, w = Math.max(3, (mb / max) * (width - left - right));
       svg.append(el("text", { x: left - 12, y: y + 17, "text-anchor": "end" }, label));
