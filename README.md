@@ -14,7 +14,7 @@ projeto; a apresentação completa está em **<https://castlaboratory.github.io/
 |---|---|
 | Analisar em R | [carbr-r](https://github.com/castlaboratory/carbr-r) · [documentação](https://castlaboratory.github.io/carbr-r/) |
 | Analisar em Python | [carbr-py](https://github.com/castlaboratory/carbr-py) · [documentação](https://castlaboratory.github.io/carbr-py/) · `pip install "carbr[geo]"` |
-| Ver análises prontas, com o código | [a fila da análise](https://castlaboratory.github.io/carbr-r/articles/analise.html) · [inconsistências do cadastro](https://castlaboratory.github.io/carbr-r/articles/inconsistencias.html) |
+| Ver análises prontas, com o código | [a fila da análise](https://castlaboratory.github.io/carbr-r/articles/analise.html) · [inconsistências do cadastro](https://castlaboratory.github.io/carbr-r/articles/inconsistencias.html) · [triagem para crédito](https://castlaboratory.github.io/carbr-r/articles/credito.html) |
 | Perguntar a um assistente de IA | servidor MCP em `https://mcp.castlab.org/mcp` · [carbr-mcp](https://github.com/castlaboratory/carbr-mcp) |
 | Ler os arquivos diretamente | `https://car.castlab.org/current/catalog.json` |
 | Consultar no mapa, sem instalar nada | <https://car.castlab.org> · [ajuda](https://car.castlab.org/ajuda.html) |
@@ -24,7 +24,7 @@ projeto; a apresentação completa está em **<https://castlaboratory.github.io/
 library(carbr)
 car_summary("size_class")                              # o país inteiro, em segundos
 car_properties("PE", municipality = "Petrolina")       # um município, lendo 4 de 107 blocos
-car_check(codigos)                                     # triagem em lote, com terras indígenas e UCs
+car_check(codigos)                                     # triagem em lote: áreas protegidas, embargos, florestas públicas
 car_typology()                                         # o perfil de cada município
 ```
 
@@ -34,14 +34,16 @@ O Sicar tem o [Consulta Pública](https://consulta.car.gov.br), que busca um im�
 registro e oferece downloads por município. Ele é a fonte oficial e o lugar certo para conferir um
 cadastro. O carbr não o substitui: serve a quem precisa dos dados dentro de um programa, sem login
 nem captcha, e acrescenta o que o portal não traz, como os totais do país numa linha de código, os
-indicadores de sobreposição, o cruzamento com terras indígenas e unidades de conservação, a
-tipologia dos municípios e o histórico semanal.
+indicadores de sobreposição, a triagem em lote dos impedimentos do crédito rural (terras indígenas,
+unidades de conservação, embargos e florestas públicas), a tipologia dos municípios e o histórico
+semanal.
 
 ## O que está publicado
 
 O perímetro declarado e dez atributos de cada um dos 8,6 milhões de imóveis, com atualização
-semanal, resumos pré-calculados, indicadores de qualidade (sobreposição entre imóveis, área fora do
-município declarado, terras indígenas e unidades de conservação), uma tipologia dos municípios e
+semanal, resumos pré-calculados, indicadores por imóvel (sobreposição entre imóveis, área fora do
+município declarado, terras indígenas, unidades de conservação, embargos do Ibama, florestas públicas não
+destinadas e parcelas georreferenciadas do Sigef), uma tipologia dos municípios e
 um histórico das mudanças de etapa da análise. Não há dado que
 identifique proprietários, nem APP, reserva legal ou vegetação nativa, que o serviço público do
 Sicar não oferece.
