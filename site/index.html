@@ -445,8 +445,8 @@
       <div class="item">
         <div class="ask"><span class="tag ok">Pronto</span><h3>Classificar, qualificar e agrupar</h3><p>Separar os cadastros por padrões, apontar os que têm sinais de inconsistência e agrupar os municípios parecidos.</p></div>
         <div class="how">
-          <p><b>Qualificação:</b> para cada imóvel não cancelado do país, a parcela da área sobreposta a outros cadastros, a parcela fora do município declarado e a parcela dentro de terras indígenas e de unidades de conservação. <b>Classificação:</b> a etapa da análise em seis categorias e uma triagem em lote. <b>Agrupamento:</b> uma tipologia dos 5.563 municípios em cinco grupos, por k-médias sobre sete indicadores do cadastro, com grupos fixos de uma semana para a outra.</p>
-          <div class="panel"><pre><code><span class="c-cmd">car_quality</span>(<span class="c-str">"PE"</span>, municipality = <span class="c-str">"Petrolina"</span>)   <span class="c-cmt"># sobreposição, terra indígena, UC, por imóvel</span>
+          <p><b>Qualificação:</b> para cada imóvel não cancelado do país, a parcela da área sobreposta a outros cadastros, a parcela fora do município declarado, a parcela dentro de terras indígenas, de unidades de conservação e de florestas públicas não destinadas, e os embargos ativos do Ibama. <b>Classificação:</b> a etapa da análise em seis categorias e uma triagem em lote. <b>Agrupamento:</b> uma tipologia dos 5.563 municípios em cinco grupos, por k-médias sobre sete indicadores do cadastro, com grupos fixos de uma semana para a outra.</p>
+          <div class="panel"><pre><code><span class="c-cmd">car_quality</span>(<span class="c-str">"PE"</span>, municipality = <span class="c-str">"Petrolina"</span>)   <span class="c-cmt"># sobreposição, áreas protegidas, embargos</span>
 <span class="c-cmd">car_quality_summary</span>()                          <span class="c-cmt"># por município, o país inteiro</span>
 <span class="c-cmd">car_typology</span>()                                 <span class="c-cmt"># o grupo de cada município</span>
 <span class="c-cmd">car_check</span>(codigos)                             <span class="c-cmt"># ok · attention · blocked · not_found</span></code></pre></div>
@@ -491,11 +491,13 @@
       <div class="item">
         <div class="ask"><span class="tag part">Em parte</span><h3>Triagem para crédito e conformidade</h3><p>Verificar de uma vez os imóveis de uma carteira, para crédito e conformidade socioambiental.</p></div>
         <div class="how">
-          <p>Uma triagem em lote devolve, para uma lista de códigos, a situação, a etapa da análise e um resultado simples. Trezentos códigos são verificados em menos de 10 segundos. Ela cruza cada imóvel com as terras indígenas (Funai) e as unidades de conservação (CNUC/MMA): mais de 1% da área em terra indígena ou em unidade de proteção integral acende o alerta; uso sustentável, como APA, só é informado. Ainda não cobre embargos.</p>
+          <p>Uma triagem em lote devolve, para uma lista de códigos, a situação, a etapa da análise e um resultado simples, em segundos. Ela cruza cada imóvel com cinco dos oito impedimentos que o Manual de Crédito Rural lista: situação do CAR, terras indígenas (Funai), unidades de conservação (CNUC/MMA), embargos ativos (Ibama) e florestas públicas não destinadas (SFB). O portal oficial faz essa conferência para o dono, um imóvel por vez e com login; aqui ela serve a quem analisa uma carteira ou um município inteiro.</p>
+          <p class="note">Faltam três critérios, e por motivos diferentes: os territórios quilombolas, porque o Incra retirou a camada do ar em 2026 e ainda não a republicou; a supressão de vegetação, que depende de autorizações sem cadastro público único; e o trabalho análogo à escravidão, que é uma lista de pessoas, e esta base não tem dado pessoal.</p>
           <div class="panel"><pre><code><span class="c-cmd">car_check</span>(<span class="c-kw">c</span>(<span class="c-str">"PE-2611101-588BC484…"</span>, <span class="c-str">"PA-1500206-8CE6BFB2…"</span>))
 <span class="c-cmt">#&gt;  ok         Cadastro ativo, sem notificação pendente.</span>
 <span class="c-cmt">#&gt;  attention  Analisado, com notificação sem resposta do declarante.</span>
-<span class="c-cmt">#&gt;  attention  Sobrepõe terra indígena (Fulni-ô) em toda a área.</span></code></pre></div>
+<span class="c-cmt">#&gt;  attention  Sobrepõe terra indígena (Fulni-ô) em toda a área.</span>
+<span class="c-cmt">#&gt;  attention  Há 2 embargos ambientais ativos do Ibama, sobre 98% da área.</span></code></pre></div>
         </div>
       </div>
 
@@ -513,7 +515,7 @@
 
       <div class="card" style="margin-top:18px">
         <h3 style="margin-top:0">O que não fazemos</h3>
-        <p>Republicamos só o que o serviço público do Sicar oferece: o perímetro declarado e dez atributos de cada imóvel. Não temos APP, reserva legal, vegetação nativa nem área a recompor, nem qualquer dado que identifique proprietários. As terras indígenas e as unidades de conservação vêm da Funai e do cadastro nacional do MMA, na edição mais recente disponível para download. A cópia é semanal, não em tempo real. A sobreposição é calculada entre imóveis do mesmo estado. E esta é uma republicação independente, sem caráter oficial: em caso de divergência, vale o Sicar.</p>
+        <p>Republicamos só o que o serviço público do Sicar oferece: o perímetro declarado e dez atributos de cada imóvel. Não temos APP, reserva legal, vegetação nativa nem área a recompor, nem qualquer dado que identifique proprietários. As camadas de cruzamento vêm do órgão responsável por cada uma (Funai, MMA, Ibama e Serviço Florestal), na edição mais recente disponível; nenhuma vem de cópia de terceiros. Os embargos são só os do Ibama. A cópia é semanal, não em tempo real. A sobreposição é calculada entre imóveis do mesmo estado. E esta é uma republicação independente, sem caráter oficial: em caso de divergência, vale o Sicar.</p>
       </div>
     </div>
   </section>
@@ -551,7 +553,7 @@
       </div>
       <div class="viz" style="margin-bottom:18px">
         <h3>Imóveis sobre terra indígena ou unidade de proteção integral</h3>
-        <p class="cap">Imóveis não cancelados com mais de 1% da área dentro dessas áreas, por UF. No país: 13.528 em terra indígena e 67.009 em unidade de conservação de proteção integral. Fontes: Funai e CNUC/MMA.</p>
+        <p class="cap">Imóveis não cancelados com mais de 1% da área dentro dessas áreas, por UF. No país: 13.528 em terra indígena e 67.009 em unidade de conservação de proteção integral. Fontes: Funai e CNUC/MMA. Os outros dois cruzamentos, embargos e florestas públicas, estão nos cartões abaixo.</p>
         <div class="legend">
           <span><i class="key" style="background:#c2255c"></i>Terra indígena</span>
           <span><i class="key" style="background:var(--brand-2)"></i>Proteção integral</span>
@@ -574,6 +576,8 @@
       <div class="grid f3">
         <div class="card"><div class="ic">📬</div><h3>1,3 milhão sem resposta</h3><p>Imóveis analisados e notificados que aguardam o declarante. No Pará e em Alagoas, dois em cada três imóveis estão nessa etapa. <a href="https://castlaboratory.github.io/carbr-r/articles/analise.html">Ver o guia</a>.</p></div>
         <div class="card"><div class="ic">🧩</div><h3>1 em cada 4 sobreposto</h3><p>25% dos imóveis não cancelados têm mais da metade da área dentro de outros cadastros do estado; no Acre, 63%. <a href="https://castlaboratory.github.io/carbr-r/articles/inconsistencias.html">Ver o guia</a>.</p></div>
+        <div class="card"><div class="ic">⛔</div><h3>69 mil com embargo</h3><p>68.972 imóveis têm embargo ambiental ativo do Ibama, sobre 5 milhões de hectares. No Acre, um em cada oito; em Lábrea (AM), mais da metade dos cadastros.</p></div>
+        <div class="card"><div class="ic">🌳</div><h3>173 mil em floresta pública</h3><p>173.046 imóveis têm parte da área sobre floresta pública ainda não destinada. Quase todos no Pará, em Rondônia e no Amazonas; só em Porto Velho são 9.337.</p></div>
         <div class="card"><div class="ic">📐</div><h3>Mais área que território</h3><p>Em 35 dos 185 municípios de Pernambuco, a área declarada no CAR passa da área do município; em Catende, é o dobro.</p></div>
       </div>
     </div>
