@@ -445,8 +445,8 @@
       <div class="item">
         <div class="ask"><span class="tag ok">Pronto</span><h3>Classificar, qualificar e agrupar</h3><p>Separar os cadastros por padrões, apontar os que têm sinais de inconsistência e agrupar os municípios parecidos.</p></div>
         <div class="how">
-          <p><b>Qualificação:</b> para cada imóvel não cancelado do país, a parcela da área sobreposta a outros cadastros, a parcela fora do município declarado, a parcela dentro de terras indígenas, de unidades de conservação e de florestas públicas não destinadas, e os embargos ativos do Ibama. <b>Classificação:</b> a etapa da análise em seis categorias e uma triagem em lote. <b>Agrupamento:</b> uma tipologia dos 5.563 municípios em cinco grupos, por k-médias sobre sete indicadores do cadastro, com grupos fixos de uma semana para a outra.</p>
-          <div class="panel"><pre><code><span class="c-cmd">car_quality</span>(<span class="c-str">"PE"</span>, municipality = <span class="c-str">"Petrolina"</span>)   <span class="c-cmt"># sobreposição, áreas protegidas, embargos</span>
+          <p><b>Qualificação:</b> para cada imóvel não cancelado do país, a parcela da área sobreposta a outros cadastros, a parcela fora do município declarado, a parcela dentro de terras indígenas, de unidades de conservação e de florestas públicas não destinadas, os embargos ativos do Ibama e quanto do perímetro coincide com parcelas georreferenciadas no Sigef, do Incra. <b>Classificação:</b> a etapa da análise em seis categorias e uma triagem em lote. <b>Agrupamento:</b> uma tipologia dos 5.563 municípios em cinco grupos, por k-médias sobre sete indicadores do cadastro, com grupos fixos de uma semana para a outra.</p>
+          <div class="panel"><pre><code><span class="c-cmd">car_quality</span>(<span class="c-str">"PE"</span>, municipality = <span class="c-str">"Petrolina"</span>)   <span class="c-cmt"># sobreposição, áreas protegidas, embargos, Sigef</span>
 <span class="c-cmd">car_quality_summary</span>()                          <span class="c-cmt"># por município, o país inteiro</span>
 <span class="c-cmd">car_typology</span>()                                 <span class="c-cmt"># o grupo de cada município</span>
 <span class="c-cmd">car_check</span>(codigos)                             <span class="c-cmt"># ok · attention · blocked · not_found</span></code></pre></div>
@@ -492,7 +492,7 @@
         <div class="ask"><span class="tag part">Em parte</span><h3>Triagem para crédito e conformidade</h3><p>Verificar de uma vez os imóveis de uma carteira, para crédito e conformidade socioambiental.</p></div>
         <div class="how">
           <p>Uma triagem em lote devolve, para uma lista de códigos, a situação, a etapa da análise e um resultado simples, em segundos. Ela cruza cada imóvel com cinco dos oito impedimentos que o Manual de Crédito Rural lista: situação do CAR, terras indígenas (Funai), unidades de conservação (CNUC/MMA), embargos ativos (Ibama) e florestas públicas não destinadas (SFB). O portal oficial faz essa conferência para o dono, um imóvel por vez e com login; aqui ela serve a quem analisa uma carteira ou um município inteiro.</p>
-          <p class="note">Faltam três critérios, e por motivos diferentes: os territórios quilombolas, porque o Incra retirou a camada do ar em 2026 e ainda não a republicou; a supressão de vegetação, que depende de autorizações sem cadastro público único; e o trabalho análogo à escravidão, que é uma lista de pessoas, e esta base não tem dado pessoal.</p>
+          <p class="note">Os territórios quilombolas entram em parte: o Incra retirou do ar em 2026 a camada completa, e usamos os territórios já georreferenciados no Sigef, com isso dito em cada alerta. Ficam de fora a supressão de vegetação, que depende de autorizações sem cadastro público único, e o trabalho análogo à escravidão, que é uma lista de pessoas, e esta base não tem dado pessoal.</p>
           <div class="panel"><pre><code><span class="c-cmd">car_check</span>(<span class="c-kw">c</span>(<span class="c-str">"PE-2611101-588BC484…"</span>, <span class="c-str">"PA-1500206-8CE6BFB2…"</span>))
 <span class="c-cmt">#&gt;  ok         Cadastro ativo, sem notificação pendente.</span>
 <span class="c-cmt">#&gt;  attention  Analisado, com notificação sem resposta do declarante.</span>
@@ -515,7 +515,7 @@
 
       <div class="card" style="margin-top:18px">
         <h3 style="margin-top:0">O que não fazemos</h3>
-        <p>Republicamos só o que o serviço público do Sicar oferece: o perímetro declarado e dez atributos de cada imóvel. Não temos APP, reserva legal, vegetação nativa nem área a recompor, nem qualquer dado que identifique proprietários. As camadas de cruzamento vêm do órgão responsável por cada uma (Funai, MMA, Ibama e Serviço Florestal), na edição mais recente disponível; nenhuma vem de cópia de terceiros. Os embargos são só os do Ibama. A cópia é semanal, não em tempo real. A sobreposição é calculada entre imóveis do mesmo estado. E esta é uma republicação independente, sem caráter oficial: em caso de divergência, vale o Sicar.</p>
+        <p>Republicamos só o que o serviço público do Sicar oferece: o perímetro declarado e dez atributos de cada imóvel. Não temos APP, reserva legal, vegetação nativa nem área a recompor, nem qualquer dado que identifique proprietários. As camadas de cruzamento vêm do órgão responsável por cada uma (Funai, MMA, Ibama, Serviço Florestal e Incra), na edição mais recente disponível; nenhuma vem de cópia de terceiros. Os embargos são só os do Ibama. A cópia é semanal, não em tempo real. A sobreposição é calculada entre imóveis do mesmo estado. E esta é uma republicação independente, sem caráter oficial: em caso de divergência, vale o Sicar.</p>
       </div>
     </div>
   </section>
@@ -578,6 +578,7 @@
         <div class="card"><div class="ic">🧩</div><h3>1 em cada 4 sobreposto</h3><p>25% dos imóveis não cancelados têm mais da metade da área dentro de outros cadastros do estado; no Acre, 63%. <a href="https://castlaboratory.github.io/carbr-r/articles/inconsistencias.html">Ver o guia</a>.</p></div>
         <div class="card"><div class="ic">⛔</div><h3>69 mil com embargo</h3><p>68.972 imóveis têm embargo ambiental ativo do Ibama, sobre 5 milhões de hectares. No Acre, um em cada oito; em Lábrea (AM), mais da metade dos cadastros.</p></div>
         <div class="card"><div class="ic">🌳</div><h3>173 mil em floresta pública</h3><p>173.046 imóveis têm parte da área sobre floresta pública ainda não destinada. Quase todos no Pará, em Rondônia e no Amazonas; só em Porto Velho são 9.337.</p></div>
+        <div class="card"><div class="ic">📍</div><h3>1 em cada 5 georreferenciado</h3><p>1.825.375 imóveis do CAR (21,7%) têm metade ou mais da área em parcelas georreferenciadas no Sigef, do Incra. Vai de 56% no Mato Grosso a 7,5% em Pernambuco e Alagoas.</p></div>
         <div class="card"><div class="ic">📐</div><h3>Mais área que território</h3><p>Em 35 dos 185 municípios de Pernambuco, a área declarada no CAR passa da área do município; em Catende, é o dobro.</p></div>
       </div>
     </div>
